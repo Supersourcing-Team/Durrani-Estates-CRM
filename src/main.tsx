@@ -1,36 +1,30 @@
-import React, { StrictMode, Suspense } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import { RouterProvider } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToastContainer } from "react-toastify";
-import { router } from "./router";
-import LoadingSpinner from "./shared-component/loading/LoadingSpinner";
-import { ToastProvider } from "@/components/kit";
+import "./styles/app.css";
+import { eng, openM, closeM, bump } from "./engine";
+import { App } from "./app/App";
+import { installEvents } from "./app/events";
+import { resetPageStateIfRouteChanged } from "./app/route";
+import { bootstrapAuthSession, installAuthOverrides } from "./auth/bootstrap";
 
-const Confirmation = React.lazy(() =>
-  import("@/shared-component/Confirmation").then((m) => ({ default: m.default })),
-);
+eng.initState();
+eng.resetUI();
+installAuthOverrides();
+installEvents();
+resetPageStateIfRouteChanged();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      refetchOnWindowFocus: false,
-    },
-  },
+(window as any).durrani = new Proxy(eng, {
+  get: (t, k) => (k === "render" ? bump : t[k as any]),
 });
+(window as any).durraniUI = { openM, closeM, render: bump };
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ToastContainer limit={1} />
-        <Suspense fallback={<LoadingSpinner />}>
-          <Confirmation />
-        </Suspense>
-        <RouterProvider router={router} />
-      </ToastProvider>
-    </QueryClientProvider>
-  </StrictMode>,
-);
+void bootstrapAuthSession().finally(() => {
+  if (!location.hash || location.hash === "#") {
+    location.replace(eng.S.session ? `#${eng.homeOf(eng.S.session.role)}` : "#login");
+  }
+  createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+});
