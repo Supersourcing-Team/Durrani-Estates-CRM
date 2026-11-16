@@ -1,7 +1,7 @@
 /* AD14 Booking review, Admin split view (prototype route admin-booking). */
 import React from 'react';
 import { eng, HR } from '../../engine';
-import { Bar, BkChip, Bn, Card, Chip, CommChip, Dl, DocChip, Icon, Kvs, type Node } from '../../ui';
+import { Bar, BkChip, Bn, BusyBtn, Card, Chip, CommChip, Dl, DocChip, Icon, Kvs, type Node } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { HistList } from '../deals/shared';
 import { C, DOC_KEYS, DealTracker, LostBk } from './shared';
@@ -11,6 +11,7 @@ const LATE = ['spa', 'dld', 'oqood'];
 /** One document row with View / Approve / Reject */
 function DocSlot({ b, k }: { b: any; k: string }) {
   const d = b.docs[k];
+  const busy = !!eng.UI.pf._busy;
   const locked = LATE.includes(k) && !['approved', 'closed'].includes(b.status);
   const can = d.s === 'uploaded' && ['pending', 'changes', 'approved'].includes(b.status) && !locked;
   const info = d.name ? d.name + ' · ' + eng.fd(d.at)
@@ -28,8 +29,8 @@ function DocSlot({ b, k }: { b: any; k: string }) {
       <div className="row g6">
         {d.name ? <button className="btn s" type="button" data-open={`doc-view|${b.id}|${k}`}>View</button> : null}
         {can ? <>
-          <button className="btn s pri" type="button" data-act={`docdec|${b.id}|${k}|approved`}>Approve</button>
-          <button className="btn s" type="button" data-open={`doc-reject|${b.id}|${k}`}>Reject</button>
+          <BusyBtn busy={busy} cls="btn s pri" act={`docdec|${b.id}|${k}|approved`} label="Approve" busyLabel="…" />
+          <button className="btn s" type="button" data-open={`doc-reject|${b.id}|${k}`} disabled={busy || undefined}>Reject</button>
         </> : null}
       </div>
     </div>
@@ -38,16 +39,17 @@ function DocSlot({ b, k }: { b: any; k: string }) {
 
 /** Right-hand decision card; content depends on the booking status */
 function Decide({ b }: { b: any }) {
+  const busy = !!eng.UI.pf._busy;
   const fOk = ['uploaded', 'approved'].includes(b.docs.form.s), rOk = ['uploaded', 'approved'].includes(b.docs.receipt.s);
-  const payBtn = <button className="btn blk mt8" type="button" data-open={`pay-progress|${b.id}`}>Record buyer payments</button>;
+  const payBtn = <button className="btn blk mt8" type="button" data-open={`pay-progress|${b.id}`} disabled={busy || undefined}>Record buyer payments</button>;
   if (b.status === 'pending') {
     return (
       <Card title="Your decision">
         {!(fOk && rOk) ? <Bn kind="warn" body="The booking form and deposit receipt both need to be uploaded before you can approve." /> : null}
         <div className="col g6 mt8">
-          <button className="btn pri blk" type="button" data-act={`bkapprove|${b.id}`} disabled={!(fOk && rOk) || undefined}><Icon n="check" s={16} />Approve booking</button>
-          <button className="btn blk" type="button" data-open={`bk-changes|${b.id}`}>Ask for changes</button>
-          <button className="btn dng blk" type="button" data-open={`bk-reject|${b.id}`}>Reject booking</button>
+          <BusyBtn busy={busy} cls="btn pri blk" act={`bkapprove|${b.id}`} disabled={!(fOk && rOk)} label={<><Icon n="check" s={16} />Approve booking</>} busyLabel="Approving…" />
+          <button className="btn blk" type="button" data-open={`bk-changes|${b.id}`} disabled={busy || undefined}>Ask for changes</button>
+          <button className="btn dng blk" type="button" data-open={`bk-reject|${b.id}`} disabled={busy || undefined}>Reject booking</button>
         </div>
         <p className="muted sm mt16">Approving books the unit and starts the deal as PENDING. Rejecting releases the unit.</p>
       </Card>
@@ -57,7 +59,7 @@ function Decide({ b }: { b: any }) {
     return (
       <Card title="Your decision">
         <Bn kind="info" title="Waiting for the agent" body={'They were asked: ' + b.reason} />
-        <div className="col g6 mt8"><button className="btn dng blk" type="button" data-open={`bk-reject|${b.id}`}>Reject booking</button></div>
+        <div className="col g6 mt8"><button className="btn dng blk" type="button" data-open={`bk-reject|${b.id}`} disabled={busy || undefined}>Reject booking</button></div>
       </Card>
     );
   }
@@ -77,7 +79,7 @@ function Decide({ b }: { b: any }) {
             );
           })}
         </div>
-        <button className="btn pri blk" type="button" data-act={`bkclose|${b.id}`} disabled={!ok || undefined}><Icon n="check" s={16} />Approve closure</button>
+        <BusyBtn busy={busy} cls="btn pri blk" act={`bkclose|${b.id}`} disabled={!ok} label={<><Icon n="check" s={16} />Approve closure</>} busyLabel="Closing…" />
         {ok ? null : <p className="muted sm mt8">{miss.length} document{miss.length > 1 ? 's' : ''} still not approved. Closure stays locked until all five are.</p>}
         {payBtn}
       </Card>

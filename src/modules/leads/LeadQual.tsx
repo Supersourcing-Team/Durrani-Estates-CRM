@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { eng, money } from '../../engine';
-import { Card, Fld, Kvs, PfInput, PfSel } from '../../ui';
+import { BusyBtn, Card, Fld, Kvs, PfInput, PfSel } from '../../ui';
 import type { LeadTabProps } from './LeadScreen';
 
 export function LeadQual({ role, l }: LeadTabProps) {
@@ -12,6 +12,7 @@ export function LeadQual({ role, l }: LeadTabProps) {
   const cur = l.cur || 'AED';
   const b = l.budget || ['', ''];
   const e = eng.UI.pf._e || {};
+  const busy = !!eng.UI.pf._busy;
   if (!mine) {
     return (
       <Card title="Qualification">
@@ -45,7 +46,7 @@ export function LeadQual({ role, l }: LeadTabProps) {
       </div>
       <div className="sticky-save">
         <span className="muted sm" style={{ marginRight: 'auto' }}>{l.qualified ? 'Qualified. You can update details anytime.' : 'Fill budget, type, timeline, payment and purpose to mark as qualified.'}</span>
-        <button className="btn pri" type="button" data-act={`qualsave|${l.id}`}>Save qualification</button>
+        <BusyBtn busy={busy} act={`qualsave|${l.id}`} label="Save qualification" busyLabel="Saving…" />
       </div>
     </Card>
   );

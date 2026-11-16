@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    // Vite SPA mode already falls back unknown paths to index.html
+    // so /accept-invite?token=… can load the app, then we rewrite to #invite-…
     server: {
       port: 4200,
       proxy: useProxy
@@ -30,6 +32,11 @@ export default defineConfig(({ mode }) => {
           }
         : undefined,
     },
+    preview: {
+      port: 4200,
+    },
+
+
     build: {
       chunkSizeWarningLimit: 1500,
     },

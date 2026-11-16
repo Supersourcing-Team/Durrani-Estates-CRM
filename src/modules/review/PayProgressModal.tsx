@@ -2,16 +2,17 @@
    UI.mf.paid holds a comma list of 1/0 flags, one per milestone. */
 import React from 'react';
 import { eng } from '../../engine';
-import { Chip, Modal } from '../../ui';
+import { BusyBtn, Chip, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const PayProgressModal: ModalComp = ({ args }) => {
   const b = eng.bkById(args[0]);
+  const busy = !!eng.UI.mf._busy;
   const pd: boolean[] = String(eng.UI.mf.paid || '').split(',').map((x) => x === '1');
   const tot = eng.sum(b.miles.filter((_m: any, i: number) => pd[i]), (m: any) => m.pct);
   return (
     <Modal title="Record buyer payments" sub={b.id + ' · from the developer statement'}
-      foot={<><button className="btn" type="button" data-act="mclose">Cancel</button><button className="btn pri" type="button" data-act={`paysave|${b.id}`}>Save</button></>}>
+      foot={<><button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button><BusyBtn busy={busy} act={`paysave|${b.id}`} label="Save" busyLabel="Saving…" /></>}>
       <div className="col g6">
         {b.miles.map((m: any, i: number) => (
           <button key={i} type="button" className={'opt ' + (pd[i] ? 'on' : '')} data-act={`paytog|${i}`}>
