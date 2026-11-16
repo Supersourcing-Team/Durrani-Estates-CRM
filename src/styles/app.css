@@ -193,6 +193,9 @@ a.kpi:hover,button.kpi:hover{border-color:var(--bd-hover);box-shadow:var(--sh-md
 .btn.xs svg{width:13px;height:13px}
 .btn.blk{width:100%}
 .btn[disabled],.btn.dis{opacity:.5;cursor:not-allowed;pointer-events:none;box-shadow:none}
+.btn.is-busy{cursor:wait;pointer-events:none}
+.btnspin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:btnspin .7s linear infinite;flex:none}
+@keyframes btnspin{to{transform:rotate(360deg)}}
 #stage.phone .btn{height:40px}#stage.phone .btn.s{height:34px}#stage.phone .btn.xs{height:28px}#stage.phone .btn.lnk{height:auto}
 
 /* chips: outline badges like the approved design */

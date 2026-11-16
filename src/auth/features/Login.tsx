@@ -1,5 +1,6 @@
 /*
  * L01 Sign in (route #login). Wired to POST /v1/auth/login/ (Module 1).
+ * Also the post-invite destination after Create Your Password.
  * Role tabs are UI-only: API returns role.code; mismatch shows inline error.
  */
 import React from "react";
@@ -7,6 +8,7 @@ import { eng, bump, go, homeOf, render } from "../../engine";
 import { Bn, Icon } from "../../ui";
 import type { ScreenComp } from "../../app/types";
 import { LoginFrame } from "./LoginFrame";
+import { AuthHelp, EyeIcon, setPf } from "./authBits";
 import { apiErrorToForm, loginWithApi, type AppRole } from "../session";
 
 const ROLES: { k: AppRole; l: string; ic: React.ReactNode }[] = [
@@ -36,42 +38,12 @@ function UserCog() {
   );
 }
 
-function EyeIcon({ off }: { off: boolean }) {
-  return off ? (
-    <svg
-      viewBox="0 0 24 24"
-      width={18}
-      height={18}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-      <path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-      <line x1="2" x2="22" y1="2" y2="22" />
-    </svg>
-  ) : (
-    <Icon n="eye" s={18} />
-  );
-}
-
-const setPf = (k: string, v: unknown) => {
-  const UI = eng.UI;
-  UI.pf[k] = v;
-  if (UI.pf._e) delete UI.pf._e[k];
-  bump();
-};
-
 function validateLocal(email: string, password: string): Record<string, string> {
   const e: Record<string, string> = {};
-  if (!email) e.email = "Enter your work email.";
-  else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "This does not look like an email address.";
-  if (!password) e.password = "Enter your password.";
-  else if (password.length < 8) e.password = "Passwords have at least 8 characters.";
+  if (!email) e.email = "Please Enter valid email address.";
+  else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Please Enter valid email address.";
+  if (!password) e.password = "Password must be at least 8 character.";
+  else if (password.length < 8) e.password = "Password must be at least 8 character.";
   return e;
 }
 
@@ -247,9 +219,7 @@ export const Login: ScreenComp = () => {
         </button>
       </form>
 
-      <p className="auth-help">
-        Need help? <a href="mailto:support@durraniestates.com">Contact support</a>
-      </p>
+      <AuthHelp />
     </LoginFrame>
   );
 };

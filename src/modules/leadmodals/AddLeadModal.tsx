@@ -6,13 +6,14 @@
  */
 import React from 'react';
 import { eng } from '../../engine';
-import { Bn, Fld, MInput, MSel, MTxa, Modal } from '../../ui';
+import { Bn, BusyBtn, Fld, MInput, MSel, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { errs } from './parts';
 
 export const AddLeadModal: ModalComp = () => {
   const f = eng.UI.mf, e = errs();
   const res = f._res;
+  const busy = !!f._busy;
   const lk = `${eng.me().role}-lead-${res && res.lead}`;
   const close = <button className="btn" type="button" data-act="mclose">Close</button>;
   if (res) {
@@ -25,7 +26,7 @@ export const AddLeadModal: ModalComp = () => {
   }
   return (
     <Modal title="Add a lead" sub="For clients who came to you directly. Campaign leads arrive through Admin."
-      foot={<><button className="btn" type="button" data-act="mclose">Cancel</button><button className="btn pri" type="button" data-act="addlead">Check and add</button></>}>
+      foot={<><button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button><BusyBtn busy={busy} act="addlead" label="Check and add" busyLabel="Adding…" /></>}>
       <div className="frm">
         <Fld label="Full name" htmlFor="m_name" err={e.name}><MInput k="name" bad={!!e.name} /></Fld>
         <Fld label="Source" htmlFor="m_src" err={e.src}><MSel k="src" opts={['Walk-in', 'Referral', 'Exhibition', 'Own network']} bad={!!e.src} blank="Choose source" /></Fld>

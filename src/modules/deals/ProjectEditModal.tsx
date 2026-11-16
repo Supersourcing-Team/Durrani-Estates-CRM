@@ -1,17 +1,18 @@
 /* Add or edit a project, Admin (prototype modal project-edit; args: [projectId?]). Save runs A.projsave. */
 import React from 'react';
 import { eng } from '../../engine';
-import { Fld, MInput, MSel, MTxa, Modal, Toggle } from '../../ui';
+import { BusyBtn, Fld, MInput, MSel, MTxa, Modal, Toggle } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const ProjectEditModal: ModalComp = ({ args }) => {
   const p = args[0] ? eng.projById(args[0]) : null;
   const f = eng.UI.mf, e = f._e || {};
+  const busy = !!f._busy;
   return (
     <Modal title={p ? 'Edit ' + p.name : 'Add a project'} drawer
       foot={<>
-        <button className="btn" type="button" data-act="mclose">Cancel</button>
-        <button className="btn pri" type="button" data-act={`projsave|${p ? p.id : ''}`}>{p ? 'Save' : 'Create project'}</button>
+        <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+        <BusyBtn busy={busy} act={`projsave|${p ? p.id : ''}`} label={p ? 'Save' : 'Create project'} busyLabel={p ? 'Saving…' : 'Creating…'} />
       </>}>
       <Fld label="Project name" htmlFor="m_name" err={e.name} req><MInput k="name" bad={!!e.name} /></Fld>
       <div className="frm">

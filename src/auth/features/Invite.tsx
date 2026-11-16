@@ -1,19 +1,18 @@
 /*
- * L03 Set password from invite link (route #invite-{token}).
- * Wired to GET /v1/auth/invite/{token}/ + POST /v1/auth/accept-invite/.
+ * Invite accept — Create Your Password (route #invite-{token}).
+ * Flow: validate invite → set password → navigate to #login (email prefilled).
  */
 import React, { useEffect, useState } from "react";
 import { eng, bump, go, render } from "../../engine";
-import { Bn, Btn, Empty, Fld, PfInput, pv } from "../../ui";
+import { Bn, Btn, Empty, Icon } from "../../ui";
 import type { ScreenComp } from "../../app/types";
 import { LoginFrame } from "./LoginFrame";
-import { PasswordRules } from "./PasswordRules";
+import { AuthHelp, EyeIcon, setPf } from "./authBits";
 import {
   acceptInviteWithApi,
   apiErrorToForm,
   loadInviteToken,
   mapApiRole,
-  roleLabel,
   routeToken,
 } from "../session";
 import { passwordHint } from "../password";
@@ -28,12 +27,13 @@ async function submitAccept(token: string, invite: InviteValidateData) {
   const UI = eng.UI;
   if (UI.pf._busy) return;
 
-  const pw = String(pv("npw") || "");
-  const cf = String(pv("ncf") || "");
+  const pw = String(UI.pf.npw || "");
+  const cf = String(UI.pf.ncf || "");
   const e: Record<string, string> = {};
   const hint = passwordHint(pw);
   if (hint) e.npw = hint;
-  if (cf !== pw) e.ncf = "The two passwords do not match.";
+  if (!cf) e.ncf = "Re-enter your new password.";
+  else if (cf !== pw) e.ncf = "The two passwords do not match.";
   if (Object.keys(e).length) {
     UI.pf._e = e;
     render();
@@ -51,9 +51,11 @@ async function submitAccept(token: string, invite: InviteValidateData) {
       first_name: invite.first_name,
       last_name: invite.last_name,
     });
-    UI.pf._busy = false;
+    // Hand off to login screen (design flow after invitation).
     UI.pf = {
-      _m: `Password set. Sign in with ${invite.email}.`,
+      email: invite.email,
+      role: mapApiRole(invite.role?.code) || "agent",
+      _m: "Password set successfully. Sign in with your work email.",
       _mk: "ok",
     };
     go("login");
@@ -63,6 +65,7 @@ async function submitAccept(token: string, invite: InviteValidateData) {
     UI.pf._e = {
       ...(mapped.fields.password ? { npw: mapped.fields.password } : {}),
       ...(mapped.fields.npw ? { npw: mapped.fields.npw } : {}),
+      ...(mapped.fields.ncf ? { ncf: mapped.fields.ncf } : {}),
     };
     UI.pf._m = mapped.message || null;
     UI.pf._mk = "err";
@@ -75,7 +78,8 @@ export const Invite: ScreenComp = ({ params }) => {
   const UI = eng.UI;
   const e = UI.pf._e || {};
   const busy = !!UI.pf._busy;
-  const pw = String(pv("npw") || "");
+  const showPw = UI.pf.showpw === "1";
+  const showCf = UI.pf.showcf === "1";
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -103,7 +107,7 @@ export const Invite: ScreenComp = ({ params }) => {
 
   if (load.status === "loading") {
     return (
-      <LoginFrame>
+      <LoginFrame bare>
         <Empty icn="clock" t="Checking invite…" d="One moment while we validate your invite link." />
       </LoginFrame>
     );
@@ -111,7 +115,7 @@ export const Invite: ScreenComp = ({ params }) => {
 
   if (load.status === "err") {
     return (
-      <LoginFrame>
+      <LoginFrame bare>
         <Empty
           icn={load.used ? "check" : "alert"}
           t={load.used ? "This link was already used" : "Invite link not valid"}
@@ -122,49 +126,106 @@ export const Invite: ScreenComp = ({ params }) => {
           }
           act={<Btn t="Go to sign in" go="login" cls="pri" />}
         />
+        <AuthHelp />
       </LoginFrame>
     );
   }
 
   const inv = load.data;
-  const appRole = mapApiRole(inv.role?.code);
-  const first = inv.first_name || inv.email.split("@")[0];
-  const roleTxt = appRole ? roleLabel(appRole) : inv.role?.name || "staff";
 
   return (
-    <LoginFrame>
-      <div>
-        <h1 className="h1">Welcome, {first}</h1>
-        <p className="sub">
-          Set a password to activate your {roleTxt} account
-          {inv.employee_code ? (
-            <>
-              . Your employee ID is <b>{inv.employee_code}</b>
-            </>
-          ) : null}
-          .
-        </p>
-      </div>
-      {UI.pf._m ? <Bn kind={UI.pf._mk || "err"} body={UI.pf._m} /> : null}
+    <LoginFrame bare>
+      <h1 className="auth-h">Create Your Password</h1>
+      <p className="auth-sub">
+        Set a password to activate your Durrani Estates account and access the platform.
+      </p>
+
+      {UI.pf._m ? (
+        <div className="auth-note">
+          <Bn kind={UI.pf._mk || "err"} body={UI.pf._m} />
+        </div>
+      ) : null}
+
       <form
-        className="col"
+        className="auth-fields"
         noValidate
         onSubmit={(ev) => {
           ev.preventDefault();
           void submitAccept(token, inv);
         }}
       >
-        <Fld label="New password" htmlFor="p_npw" err={e.npw}>
-          <PfInput k="npw" type="password" bad={!!e.npw} />
-        </Fld>
-        <PasswordRules password={pw} />
-        <Fld label="Confirm password" htmlFor="p_ncf" err={e.ncf}>
-          <PfInput k="ncf" type="password" bad={!!e.ncf} />
-        </Fld>
-        <button className="btn pri blk" type="submit" disabled={busy}>
-          {busy ? "Activating…" : "Activate account"}
+        <div className="afld">
+          <label htmlFor="p_npw">New password</label>
+          <div className="ainp pw">
+            <input
+              className={"inp" + (e.npw ? " bad" : "")}
+              id="p_npw"
+              type={showPw ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Enter new password"
+              value={UI.pf.npw || ""}
+              disabled={busy}
+              onChange={(ev) => setPf("npw", ev.target.value)}
+            />
+            <button
+              type="button"
+              className="eye"
+              aria-label={showPw ? "Hide password" : "Show password"}
+              onClick={() => {
+                UI.pf.showpw = showPw ? "0" : "1";
+                bump();
+              }}
+            >
+              <EyeIcon off={!showPw} />
+            </button>
+          </div>
+          {e.npw ? (
+            <span className="err">
+              <Icon n="alert" s={14} />
+              {e.npw}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="afld">
+          <label htmlFor="p_ncf">Confirm new password</label>
+          <div className="ainp pw">
+            <input
+              className={"inp" + (e.ncf ? " bad" : "")}
+              id="p_ncf"
+              type={showCf ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Re-enter new password"
+              value={UI.pf.ncf || ""}
+              disabled={busy}
+              onChange={(ev) => setPf("ncf", ev.target.value)}
+            />
+            <button
+              type="button"
+              className="eye"
+              aria-label={showCf ? "Hide password" : "Show password"}
+              onClick={() => {
+                UI.pf.showcf = showCf ? "0" : "1";
+                bump();
+              }}
+            >
+              <EyeIcon off={!showCf} />
+            </button>
+          </div>
+          {e.ncf ? (
+            <span className="err">
+              <Icon n="alert" s={14} />
+              {e.ncf}
+            </span>
+          ) : null}
+        </div>
+
+        <button className="auth-btn" type="submit" disabled={busy}>
+          {busy ? "Saving…" : "Set Password & Continue"}
         </button>
       </form>
+
+      <AuthHelp />
     </LoginFrame>
   );
 };

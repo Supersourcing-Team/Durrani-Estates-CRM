@@ -1,7 +1,7 @@
 /* New booking form (prototype route agent-bookingnew; params: [leadId, projectId, unitId]). Submit runs A.booksave. */
 import React from 'react';
 import { eng, HR } from '../../engine';
-import { Bn, Card, Dl, Empty, Fld, Icon, PgHead, PfTxa, pv } from '../../ui';
+import { Bn, BusyBtn, Card, Dl, Empty, Fld, Icon, PgHead, PfTxa, pv } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { PInp, PSel } from './shared';
 
@@ -10,6 +10,7 @@ const DOC_SLOTS: [string, string][] = [['f_form', 'Developer booking form (signe
 export const BookingNew: ScreenComp = ({ params: p }) => {
   const S = eng.S;
   const u = eng.me(), e = eng.UI.pf._e || {};
+  const busy = !!eng.UI.pf._busy;
   const ls: any[] = eng.leadsOf(u.id).filter((l: any) => l.track === 'property' && !S.bookings.some((b: any) => b.lead === l.id && ['pending', 'changes', 'approved'].includes(b.status)));
   const lead = pv('lead', p[0] || ''), proj = pv('proj', p[1] || ''), pr = proj ? eng.projById(proj) : null;
   const units: any[] = pr ? pr.units.filter((x: any) => x.status === 'Available' || x.holdBy === u.id) : [];
@@ -79,7 +80,7 @@ export const BookingNew: ScreenComp = ({ params: p }) => {
               </>
             ) : <Empty icn="building" t="Pick a unit" d="The summary appears here." />}
           </Card>
-          <button className="btn pri blk" type="button" data-act="booksave" disabled={capHit || undefined}>Submit for Admin review</button>
+          <BusyBtn busy={busy} cls="btn pri blk" act="booksave" disabled={capHit} label="Submit for Admin review" busyLabel="Submitting…" />
           <a className="btn blk" href="#agent-bookings" data-go="agent-bookings">Cancel</a>
         </div>
       </div>

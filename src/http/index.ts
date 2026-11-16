@@ -1,5 +1,13 @@
 export { api, getApiBaseUrl } from "./axios";
 export { apiEndpoints } from "./apiEndpoint";
 export * from "./auth";
+export * from "./leads";
+export * from "./leads.types";
+export * from "./catalogue";
+export * from "./catalogue.types";
+export * from "./deals";
+export * from "./deals.types";
+export * from "./commission";
+export * from "./commission.types";
 export * from "./tokens";
 export * from "./types";

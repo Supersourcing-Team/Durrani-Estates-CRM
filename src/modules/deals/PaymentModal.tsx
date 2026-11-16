@@ -4,10 +4,14 @@ import { eng } from '../../engine';
 import { Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { nw } from './shared';
+import { paymentPlanRows } from './propertyMappers';
 
 export const PaymentModal: ModalComp = ({ args }) => {
   const pr = eng.projById(args[0]), x = pr.units.find((u: any) => u.id === args[1]);
-  const rows: any[] = eng.planRows(x.price, pr.plan);
+  const rows = paymentPlanRows(pr, x.price);
+  const fromApi = Array.isArray(pr.paymentPlans) && pr.paymentPlans.some((p: any) =>
+    (p?.milestones || p?.installments || p?.rows || p?.schedule || []).length,
+  );
   return (
     <Modal title="Payment breakdown" sub={pr.name + ' · ' + x.id + ' · ' + eng.mfull(x.price)}
       foot={<button className="btn" type="button" data-act="mclose">Close</button>}>
@@ -20,7 +24,7 @@ export const PaymentModal: ModalComp = ({ args }) => {
           </tbody>
         </table>
       </div>
-      <p className="muted sm">DLD fee of 4% ({eng.mfull(Math.round(x.price * 0.04))}) and the Oqood fee are paid by the buyer on top. Plan: {pr.plan}.</p>
+      <p className="muted sm">DLD fee of 4% ({eng.mfull(Math.round(x.price * 0.04))}) and the Oqood fee are paid by the buyer on top. Plan: {pr.plan}{fromApi ? '' : ' (estimated)'}.</p>
     </Modal>
   );
 };

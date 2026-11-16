@@ -1,7 +1,7 @@
 /* AD16 Commission detail (prototype route admin-comm). */
 import React from 'react';
 import { eng } from '../../engine';
-import { Bn, Btn, Card, CommChip, Dl, Empty, Icon, type Node } from '../../ui';
+import { Bn, BusyBtn, Btn, Card, CommChip, Dl, Empty, Icon, type Node } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { HistList } from '../deals/shared';
 
@@ -26,6 +26,7 @@ export const CommDetail: ScreenComp = ({ params }) => {
       </Card>
     );
   }
+  const busy = !!eng.UI.pf._busy;
   const c = eng.comm(b), pr = c.p, ag = eng.userById(b.agent), dv = eng.devState(b);
   const bkGo = 'admin-booking-' + eng.bkP(b.id), userGo = 'admin-user-' + ag.id;
   return (
@@ -51,13 +52,13 @@ export const CommDetail: ScreenComp = ({ params }) => {
             <div className="stp">
               <Step ok={b.status === 'closed'} t="Booking closed by Admin" d="All five documents approved" />
               <Step ok={!!b.devInv} t="Developer invoiced" d={b.devInv ? eng.fd(b.devInv) : 'Raise the invoice to ' + pr.dev}
-                act={b.status === 'closed' && !b.devInv ? <button className="btn s pri" type="button" data-act={`devinv|${b.id}`}>Mark invoiced</button> : null} />
+                act={b.status === 'closed' && !b.devInv ? <BusyBtn busy={busy} cls="btn s pri" act={`devinv|${b.id}`} label="Mark invoiced" busyLabel="Saving…" /> : null} />
               <Step ok={!!b.devRec} t="Developer commission received" d={b.devRec ? eng.fd(b.devRec) : dv.k === 'over' ? dv.l : 'Waiting for the developer'}
-                act={b.devInv && !b.devRec ? <button className="btn s pri" type="button" data-act={`devrec|${b.id}`}>Mark received</button> : null} />
+                act={b.devInv && !b.devRec ? <BusyBtn busy={busy} cls="btn s pri" act={`devrec|${b.id}`} label="Mark received" busyLabel="Saving…" /> : null} />
               <Step ok={b.paidPct >= pr.relPct} t={'Buyer has paid ' + pr.relPct + '%'} d={'Now ' + b.paidPct + '%'}
-                act={b.status === 'closed' && b.paidPct < pr.relPct ? <button className="btn s" type="button" data-open={`pay-progress|${b.id}`}>Record payments</button> : null} />
+                act={b.status === 'closed' && b.paidPct < pr.relPct ? <button className="btn s" type="button" data-open={`pay-progress|${b.id}`} disabled={busy || undefined}>Record payments</button> : null} />
               <Step ok={!!b.incRel} t="Incentive released" d={b.incRel ? eng.fd(b.incRel) : 'Release when everything above is done'}
-                act={c.st === 'eligible' ? <button className="btn s pri" type="button" data-open={`comm-release|${b.id}`}>Release</button> : null} />
+                act={c.st === 'eligible' ? <button className="btn s pri" type="button" data-open={`comm-release|${b.id}`} disabled={busy || undefined}>Release</button> : null} />
             </div>
           </Card>
           <Card title="History"><HistList arr={b.hist} /></Card>
