@@ -1,16 +1,17 @@
 /* Upload a note document (prototype modal cn-doc, args [leadId, docKey]). Saves with the cndoc action. */
 import React from 'react';
 import { eng } from '../../engine';
-import { Fld, Icon, Modal } from '../../ui';
+import { BusyBtn, Fld, Icon, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const CnDocModal: ModalComp = ({ args }) => {
   const UI = eng.UI;
   const t = (eng.CNDOCS as [string, string][]).find((x) => x[0] === args[1])![1];
+  const busy = !!UI.mf._busy;
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn pri" type="button" data-act={`cndoc|${args[0]}|${args[1]}`}>Upload</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} act={`cndoc|${args[0]}|${args[1]}`} label="Upload" busyLabel="Uploading…" />
     </>
   );
   return (

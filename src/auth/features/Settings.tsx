@@ -3,6 +3,7 @@ import React from 'react';
 import { eng } from '../../engine';
 import { Card, Icon, Kvs, PgHead, Toggle } from '../../ui';
 import type { ScreenComp } from '../../app/types';
+import { SignOutButton } from './SignOutButton';
 
 const CHANNELS = ['Follow-up reminders', 'Lead at-risk warnings', 'Booking decisions', 'Meeting verification replies'];
 
@@ -32,7 +33,7 @@ function SettingsView({ role }: { role: 'agent' | 'mgmt' }) {
             </div>
             <div className="row sb">
               <div><div className="b">Sign out</div><div className="muted sm">End this session on this device.</div></div>
-              <button className="btn" type="button" data-act="logout"><Icon n="out" s={16} />Sign out</button>
+              <SignOutButton variant="btn" />
             </div>
           </div>
         </Card>

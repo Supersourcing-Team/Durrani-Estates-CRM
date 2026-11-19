@@ -24,6 +24,35 @@ export const apiEndpoints = {
     dnd: (id: string | number) => `/v1/leads/${id}/dnd/`,
     removeDnd: (id: string | number) => `/v1/leads/${id}/remove-dnd/`,
   },
+  /** Lead Pipeline — Workspace */
+  workspace: {
+    options: "/v1/workspace/options/",
+    callAttempts: (leadId: string | number) => `/v1/workspace/leads/${leadId}/call-attempts/`,
+    pendingAttempt: "/v1/workspace/call-attempts/pending/",
+    abandonAttempt: (id: string | number) => `/v1/workspace/call-attempts/${id}/abandon/`,
+    calls: (leadId: string | number) => `/v1/workspace/leads/${leadId}/calls/`,
+    nextActions: (leadId: string | number) => `/v1/workspace/leads/${leadId}/next-actions/`,
+    nextActionById: (id: string | number) => `/v1/workspace/next-actions/${id}/`,
+    completeAction: (id: string | number) => `/v1/workspace/next-actions/${id}/complete/`,
+    cancelAction: (id: string | number) => `/v1/workspace/next-actions/${id}/cancel/`,
+    schedule: "/v1/workspace/schedule/",
+    meetings: (leadId: string | number) => `/v1/workspace/leads/${leadId}/meetings/`,
+    meetingNoShow: (id: string | number) => `/v1/workspace/meetings/${id}/no-show/`,
+    notes: (leadId: string | number) => `/v1/workspace/leads/${leadId}/notes/`,
+    timeline: (leadId: string | number) => `/v1/workspace/leads/${leadId}/timeline/`,
+    escalations: "/v1/workspace/escalations/",
+    escalate: (leadId: string | number) => `/v1/workspace/leads/${leadId}/escalations/`,
+    escalationResponse: (id: string | number) => `/v1/workspace/escalations/${id}/responses/`,
+    nudge: (leadId: string | number) => `/v1/workspace/leads/${leadId}/nudges/`,
+  },
+  /** Lead Pipeline — Rules engine */
+  rulesEngine: {
+    status: (leadId: string | number) => `/v1/rules-engine/leads/${leadId}/status/`,
+    history: (leadId: string | number) => `/v1/rules-engine/leads/${leadId}/history/`,
+    holds: (leadId: string | number) => `/v1/rules-engine/leads/${leadId}/holds/`,
+    releaseHold: (leadId: string | number, holdId: string | number) =>
+      `/v1/rules-engine/leads/${leadId}/holds/${holdId}/release/`,
+  },
   /** Module 3 — Property Sales */
   catalogue: {
     developers: "/v1/catalogue/developers/",
@@ -60,5 +89,45 @@ export const apiEndpoints = {
     release: (id: string | number) => `/v1/commission/${id}/release/`,
     adjust: (id: string | number) => `/v1/commission/${id}/adjust/`,
     slabs: "/v1/commission/slabs/",
+  },
+  /** Module 4 — Org settings */
+  settings: {
+    root: "/v1/settings/",
+    cn: "/v1/settings/cn/",
+    cnCommission: "/v1/settings/cn-commission/",
+    fx: "/v1/settings/fx/",
+    inactivityRules: "/v1/settings/inactivity-rules/",
+    inactivityRuleById: (id: string | number) => `/v1/settings/inactivity-rules/${id}/`,
+  },
+  /** Module 4 — Convertible Notes */
+  convertibleNotes: {
+    calculator: "/v1/convertible-notes/calculator/",
+    applications: "/v1/convertible-notes/applications/",
+    applicationById: (id: string | number) => `/v1/convertible-notes/applications/${id}/`,
+    share: (id: string | number) => `/v1/convertible-notes/applications/${id}/share/`,
+    commit: (id: string | number) => `/v1/convertible-notes/applications/${id}/commit/`,
+    startDocuments: (id: string | number) =>
+      `/v1/convertible-notes/applications/${id}/start-documents/`,
+    document: (id: string | number, category: string) =>
+      `/v1/convertible-notes/applications/${id}/documents/${category}/`,
+    documentDecision: (id: string | number, category: string) =>
+      `/v1/convertible-notes/applications/${id}/documents/${category}/decision/`,
+    pdcRegister: (id: string | number) => `/v1/convertible-notes/applications/${id}/pdc-register/`,
+    submit: (id: string | number) => `/v1/convertible-notes/applications/${id}/submit/`,
+    sendBack: (id: string | number) => `/v1/convertible-notes/applications/${id}/send-back/`,
+    approve: (id: string | number) => `/v1/convertible-notes/applications/${id}/approve/`,
+    notes: "/v1/convertible-notes/notes/",
+    noteById: (id: string | number) => `/v1/convertible-notes/notes/${id}/`,
+    payoutPay: (id: string | number, n: string | number) =>
+      `/v1/convertible-notes/notes/${id}/payouts/${n}/pay/`,
+    payoutBounce: (id: string | number, n: string | number) =>
+      `/v1/convertible-notes/notes/${id}/payouts/${n}/bounce/`,
+    payoutFix: (id: string | number, n: string | number) =>
+      `/v1/convertible-notes/notes/${id}/payouts/${n}/fix/`,
+    repayPrincipal: (id: string | number) => `/v1/convertible-notes/notes/${id}/repay-principal/`,
+    renew: (id: string | number) => `/v1/convertible-notes/notes/${id}/renew/`,
+    commissions: "/v1/convertible-notes/commissions/",
+    commissionRelease: (id: string | number) =>
+      `/v1/convertible-notes/commissions/${id}/release/`,
   },
 };

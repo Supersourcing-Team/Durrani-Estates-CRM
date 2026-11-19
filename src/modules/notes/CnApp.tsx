@@ -1,7 +1,7 @@
 /* A14 Note application (prototype route agent-cnapp, plus the 15c-deals layer that adds the rejected-documents banner). */
 import React from 'react';
 import { eng, mfull, ft } from '../../engine';
-import { Bn, Btn, Card, Empty, Icon, Kvs, LeadLinks, PgHead } from '../../ui';
+import { Bn, BusyBtn, Btn, Card, Empty, Icon, Kvs, LeadLinks, PgHead } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { CnDocLine } from './parts';
 
@@ -11,6 +11,7 @@ export const CnApp: ScreenComp = ({ params }) => {
   const S = eng.S;
   const CNDOCS: [string, string][] = eng.CNDOCS;
   const l = eng.leadById(params[0]);
+  const busy = !!eng.UI.pf._busy || !!eng.UI.mf._busy;
   if (!l || l.owner !== eng.me().id || !l.cn) {
     return <Card title=""><Empty icn="clip" t="Application not available" d="This lead has no Convertible Note application, or it is not yours." act={<Btn t="Back" go="agent-cn" cls="pri" />} /></Card>;
   }
@@ -21,10 +22,10 @@ export const CnApp: ScreenComp = ({ params }) => {
   const rej = CNDOCS.filter(([k]) => eng.cnDS(cn, k) === 'rejected');
 
   const act = ({
-    Qualified: <button className="btn pri" type="button" data-open={`cn-share|${l.id}`}><Icon n="send" s={16} />Share information</button>,
-    'Information shared': <button className="btn pri" type="button" data-open={`cn-commit|${l.id}`}>Client wants to proceed</button>,
-    Interested: <button className="btn pri" type="button" data-act={`cnstart|${l.id}`}>Start documents</button>,
-    Documents: <button className="btn pri" type="button" data-act={`cnsubmit|${l.id}`} disabled={!all || undefined}>Submit to Admin</button>,
+    Qualified: <button className="btn pri" type="button" data-open={`cn-share|${l.id}`} disabled={busy || undefined}><Icon n="send" s={16} />Share information</button>,
+    'Information shared': <button className="btn pri" type="button" data-open={`cn-commit|${l.id}`} disabled={busy || undefined}>Client wants to proceed</button>,
+    Interested: <BusyBtn busy={busy} act={`cnstart|${l.id}`} label="Start documents" busyLabel="Starting…" />,
+    Documents: <BusyBtn busy={busy} act={`cnsubmit|${l.id}`} disabled={!all} label="Submit to Admin" busyLabel="Submitting…" />,
   } as Record<string, React.ReactNode>)[cn.stage] || null;
 
   const showDocs = ['Documents', 'Admin review'].includes(cn.stage) || cn.stage === 'Interested';

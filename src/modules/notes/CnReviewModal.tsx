@@ -1,20 +1,21 @@
 /* Admin decision on a note application (prototype modal cn-review as replaced in 15c-deals). Saves with the cndecide action. */
 import React from 'react';
 import { eng, mfull } from '../../engine';
-import { Bn, Dl, Fld, MOpt, MTxa, Modal } from '../../ui';
+import { Bn, BusyBtn, Dl, Fld, MOpt, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const CnReviewModal: ModalComp = ({ args }) => {
   const S = eng.S, UI = eng.UI;
   const CNDOCS: [string, string][] = eng.CNDOCS;
   const l = eng.leadById(args[0]), c = l.cn, e = UI.mf._e || {};
+  const busy = !!UI.mf._busy;
   const mo = Math.round(c.amount * S.set.cn.rate / 100);
   const v = CNDOCS.filter(([k]) => eng.cnDS(c, k) === 'verified').length;
   const rej = CNDOCS.filter(([k]) => eng.cnDS(c, k) === 'rejected');
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn pri" type="button" data-act={`cndecide|${l.id}`}>Confirm decision</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} act={`cndecide|${l.id}`} label="Confirm decision" busyLabel="Saving…" />
     </>
   );
   return (

@@ -1,7 +1,7 @@
 /* AD23 Settings (prototype route admin-settings: tabs rules, slabs, targets, cn, docs, dnd, plus the email-templates layer). */
 import React from 'react';
 import { eng, nf, ft, fts, pct } from '../../engine';
-import { Bn, Card, Chip, Empty, Fld, Icon, Kpi, PfInput, PgHead, Toggle } from '../../ui';
+import { Bn, BusyBtn, Card, Chip, Empty, Fld, Icon, Kpi, PfInput, PgHead, Toggle } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { Tc } from './parts';
 
@@ -31,12 +31,15 @@ function Num({ k, label, v, min, hint }: { k: string; label: string; v: any; min
 }
 
 /** Save + Discard buttons under each form. */
-const SaveRow = ({ act, t }: { act: string; t: string }) => (
-  <div className="row g6">
-    <button className="btn pri" type="button" data-act={act}>{t}</button>
-    <button className="btn" type="button" data-act="setreset">Discard changes</button>
-  </div>
-);
+const SaveRow = ({ act, t }: { act: string; t: string }) => {
+  const busy = !!eng.UI.pf._busy;
+  return (
+    <div className="row g6">
+      <BusyBtn busy={busy} act={act} label={t} busyLabel="Saving…" />
+      <button className="btn" type="button" data-act="setreset" disabled={busy || undefined}>Discard changes</button>
+    </div>
+  );
+};
 
 /* Lead rules */
 function RulesTab() {
@@ -51,8 +54,8 @@ function RulesTab() {
       <div className="col g16">
         <Card title="Lead activity">
           <div className="frm">
-            <Num k="inactX" label="Days without a next step before a lead is AT RISK" v={st.inactX} min={1} hint="Any dated next action resets the clock. Notes alone do not." />
-            <Num k="inactY" label="Further days at risk before it returns to the pool" v={st.inactY} min={1} />
+            <Num k="inactX" label="Days without a next step before a lead is AT RISK" v={st.inactX} min={1} hint="Saved to inactivity policies for property, CN and secondary tracks. A dated next action resets the clock; notes alone do not." />
+            <Num k="inactY" label="Further days at risk before it returns to the pool" v={st.inactY} min={1} hint="Grace days on each track policy after the at-risk threshold." />
           </div>
           <div className="frm">
             <Num k="capDefault" label="Default active lead ceiling per agent" v={st.capDefault} min={1} hint="Each agent can have their own ceiling on their profile." />
@@ -136,9 +139,10 @@ function TargetsTab() {
   );
 }
 
-/* Convertible Notes terms */
+/* Convertible Notes terms + FX + CN commission defaults (Module 4) */
 function CnTab() {
   const st = eng.S.set, c = st.cn;
+  const cc = st.cnCommission || { agent: 5, teamLead: 1, businessHead: 1 };
   return (
     <div className="grid g2">
       <div className="col g16">
@@ -148,6 +152,13 @@ function CnTab() {
             <Num k="c_rate" label="Monthly payout rate (%)" v={c.rate} min={0.1} hint="Paid monthly on the principal. Principal returns at maturity." />
           </div>
           <Fld label="Currencies"><div className="row g6">{c.cur.map((x: string) => <Chip key={x} t={x} cls="s4" dot={false} />)}</div></Fld>
+        </Card>
+        <Card title="CN commission defaults">
+          <div className="frm">
+            <Num k="cn_agent" label="Agent %" v={cc.agent} min={0} hint="Applies to new notes only." />
+            <Num k="cn_tl" label="Team lead %" v={cc.teamLead} min={0} />
+            <Num k="cn_bh" label="Business head %" v={cc.businessHead} min={0} />
+          </div>
         </Card>
       </div>
       <div className="col g16">

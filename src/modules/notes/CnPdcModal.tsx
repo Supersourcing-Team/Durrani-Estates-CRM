@@ -1,17 +1,18 @@
 /* PDC register (prototype modal cn-pdc, args [leadId, 'pdc']). Saves with the cnpdc action. */
 import React from 'react';
 import { eng, fd } from '../../engine';
-import { Fld, MInput, Modal } from '../../ui';
+import { BusyBtn, Fld, MInput, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const CnPdcModal: ModalComp = ({ args }) => {
   const S = eng.S;
   const l = eng.leadById(args[0]);
   const e = eng.UI.mf._e || {};
+  const busy = !!eng.UI.mf._busy;
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn pri" type="button" data-act={`cnpdc|${l.id}`}>Save register</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} act={`cnpdc|${l.id}`} label="Save register" busyLabel="Saving…" />
     </>
   );
   return (

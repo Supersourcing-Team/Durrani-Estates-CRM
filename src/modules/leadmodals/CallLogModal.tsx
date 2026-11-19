@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { eng, cap1, dtl, dtp, fts, fhm, startOfDay, NOW, HR, DAY } from '../../engine';
-import { Av, Bn, Fld, Icon, MInput, MTxa, Modal } from '../../ui';
+import { Av, Bn, BusyBtn, Fld, Icon, MInput, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { ErrLine, TempPick, errs } from './parts';
 
@@ -150,14 +150,15 @@ export const CallLogModal: ModalComp = ({ args: a }) => {
   const sum = [f.res, conn && f.dur ? f.dur + ' min' : '', conn ? f.disp : '', f.temp && conn ? cap1(f.temp) : '',
     f.nat ? (conn ? f.ntype || 'Follow-up' : 'Retry') + ' ' + fts(dtp(f.nat)) : ''].filter(Boolean).join(' · ');
   const done = steps.filter((s) => s.done).length;
+  const busy = !!f._busy;
 
   return (
     <Modal title="Log call" size="w"
       sub={allDone || bad ? 'Ready to save' : 'Step ' + Math.min(steps.length, done + 1) + ' of ' + steps.length}
       foot={<>
         {sum ? <span className="clsum">{sum}</span> : null}
-        <button className="btn" type="button" data-act="mclose">Cancel</button>
-        <button className="btn pri" type="button" data-act={`callsave|${l.id}`} disabled={f.res ? undefined : true}><Icon n="check" s={16} />{bad ? 'Save and archive' : 'Save call'}</button>
+        <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+        <BusyBtn busy={busy} act={`callsave|${l.id}`} disabled={!f.res} label={<><Icon n="check" s={16} />{bad ? 'Save and archive' : 'Save call'}</>} busyLabel="Saving…" />
       </>}>
       <div className="clhead">
         <Av n={l.name} />

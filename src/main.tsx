@@ -8,14 +8,18 @@ import { resetPageStateIfRouteChanged } from "./app/route";
 import { bootstrapAuthSession, installAuthOverrides } from "./auth/bootstrap";
 import { normalizeAuthDeepLinks } from "./auth/inviteLink";
 import { installLeadsApiOverrides } from "./modules/leads/leadsBootstrap";
+import { installWorkspaceApiOverrides } from "./modules/leads/workspaceBootstrap";
 import { installPropertySalesApiOverrides } from "./modules/deals/propertySalesBootstrap";
+import { installConvertibleNotesApiOverrides } from "./modules/notes/cnBootstrap";
 import { installApiRouteHydration } from "./modules/apiRouteHydrate";
 
 eng.initState();
 eng.resetUI();
 installAuthOverrides();
 installLeadsApiOverrides();
+installWorkspaceApiOverrides();
 installPropertySalesApiOverrides();
+installConvertibleNotesApiOverrides();
 installEvents();
 normalizeAuthDeepLinks();
 resetPageStateIfRouteChanged();

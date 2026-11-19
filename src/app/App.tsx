@@ -13,6 +13,7 @@ import { Shell, roleLabel } from '../project-layout/Shell';
 import { ModalHost, ToastHost } from './hosts';
 import { ErrorBoundary } from './ErrorBoundary';
 import { APP_ROLE, APP_NAME } from './config';
+import { SignOutButton } from '../auth/features/SignOutButton';
 
 const APP_ROLES = ['agent', 'mgmt', 'admin'];
 
@@ -50,7 +51,7 @@ function OtherApp({ d }: { d: any }) {
     <div className="card" style={{ maxWidth: 640, margin: '20px auto' }}>
       <Empty icn="lock" t="This screen is in another app"
         d={`${d.title} is not available in this build.`}
-        act={<Btn t="Sign out" act="logout" cls="pri" />} />
+        act={<SignOutButton variant="pri" />} />
     </div>
   );
 }
@@ -63,7 +64,7 @@ function WrongApp({ role }: { role: string }) {
       <div className="l">
         <Empty icn="lock" t={`This is the ${name[APP_ROLE as string]} app`}
           d={`You are signed in as ${name[role] || role}. Open the ${name[role] || role} app to continue.`}
-          act={<Btn t="Sign out" act="logout" cls="pri" />} />
+          act={<SignOutButton variant="pri" />} />
       </div>
       <div className="r" />
     </div>

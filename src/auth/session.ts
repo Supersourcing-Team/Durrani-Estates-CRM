@@ -164,15 +164,28 @@ export async function loginWithApi(opts: {
   return { role, user };
 }
 
+let logoutBusy = false;
+
+/** True while POST /auth/logout/ is in flight (used for button loaders). */
+export function isLoggingOut(): boolean {
+  return logoutBusy;
+}
+
 export async function logoutWithApi(): Promise<void> {
+  if (logoutBusy) return;
+  logoutBusy = true;
+  render();
   const refreshToken = getRefreshToken();
   try {
     if (refreshToken) await apiLogout(refreshToken);
   } catch {
     /* still clear local session */
+  } finally {
+    logoutBusy = false;
   }
   clearTokens();
   clearEngineSession();
+  closeM();
   location.hash = "#login";
   render();
 }
