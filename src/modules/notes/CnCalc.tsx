@@ -4,6 +4,7 @@ import { eng, mfull, fd, nf } from '../../engine';
 import { Card, Empty, Fld, Icon, Kpi, NumInput, Pager, PgHead, pv } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { AmtHelp, PfFixed } from './parts';
+import { resolveCnCalc } from './cnBootstrap';
 
 export const CnCalc: ScreenComp = ({ params }) => {
   const S = eng.S, UI = eng.UI;
@@ -11,7 +12,7 @@ export const CnCalc: ScreenComp = ({ params }) => {
   const cur: string = pv('cur', l && l.cn ? l.cn.cur : 'AED');
   const amt = +pv('amt', l && l.cn ? l.cn.amount : '') || 0;
   const e = UI.pf._e || {};
-  const c = amt > 0 ? eng.cnCalc(amt, eng.NOW()) : null;
+  const c = amt > 0 ? resolveCnCalc(amt) : null;
   const pg = Math.min(+pv('pg', 1), 3);
   const msg = c
     ? `Hi${l ? ' ' + l.name.split(' ')[0] : ''}, here is the Durrani Convertible Note: invest ${mfull(amt, cur)} for ${c.n} months. You receive ${mfull(c.m, cur)} every month (${S.set.cn.rate}%), ${mfull(c.total, cur)} in total, and your ${mfull(amt, cur)} comes back at maturity. Total return ${mfull(c.ret, cur)}.`

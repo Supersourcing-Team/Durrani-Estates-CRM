@@ -3,6 +3,7 @@ import React from 'react';
 import { eng } from '../../engine';
 import { Icon, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
+import { SignOutButton } from './SignOutButton';
 
 export const AccountMenuModal: ModalComp = () => {
   const u = eng.me();
@@ -13,7 +14,7 @@ export const AccountMenuModal: ModalComp = () => {
       <div className="col g6">
         <a className="btn blk" href={`#${r}-settings`} data-go={`${r}-settings`}><Icon n="cog" s={16} />Settings</a>
         <a className="btn blk" href={`#${r}-notifications`} data-go={`${r}-notifications`}><Icon n="bell" s={16} />Notifications{unread ? ' (' + unread + ')' : ''}</a>
-        <button className="btn blk" type="button" data-act="logout"><Icon n="out" s={16} />Sign out</button>
+        <SignOutButton variant="blk" />
       </div>
     </Modal>
   );

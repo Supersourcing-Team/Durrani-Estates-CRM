@@ -79,6 +79,9 @@ export interface LeadListItem {
   is_archived: boolean;
   is_dnd: boolean;
   owner: LeadOwner | null;
+  ownership_cycle?: string | null;
+  assigned_at?: string | null;
+  disposition?: string | null;
   created_at: string;
 }
 

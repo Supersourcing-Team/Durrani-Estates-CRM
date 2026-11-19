@@ -1,17 +1,18 @@
 /* A-L3-19 Client wants to proceed (prototype modal cn-commit). Saves with the cncommit action. */
 import React from 'react';
 import { eng } from '../../engine';
-import { Fld, MCheck, MInput, MSel, Modal } from '../../ui';
+import { BusyBtn, Fld, MCheck, MInput, MSel, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const CnCommitModal: ModalComp = ({ args }) => {
   const S = eng.S;
   const l = eng.leadById(args[0]);
   const e = eng.UI.mf._e || {};
+  const busy = !!eng.UI.mf._busy;
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn pri" type="button" data-act={`cncommit|${l.id}`}>Confirm</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} act={`cncommit|${l.id}`} label="Confirm" busyLabel="Saving…" />
     </>
   );
   return (

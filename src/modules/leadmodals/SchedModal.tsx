@@ -1,18 +1,19 @@
 /* A-L3-02 Schedule next action / Reschedule. */
 import React from 'react';
 import { eng, dtl, startOfDay, NOW, HR, DAY } from '../../engine';
-import { Bn, Fld, MInput, MOpt, MTxa, Modal } from '../../ui';
+import { Bn, BusyBtn, Fld, MInput, MOpt, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { errs } from './parts';
 
 export const SchedModal: ModalComp = ({ args: a }) => {
   const l = eng.leadById(a[0]), f = eng.UI.mf, e = errs();
+  const busy = !!f._busy;
   const sod = startOfDay(NOW());
   const quick: [string, string][] = [['Today 17:00', dtl(sod + 13 * HR)], ['Tomorrow 11:00', dtl(sod + DAY + 7 * HR)], ['In 3 days 11:00', dtl(sod + 3 * DAY + 7 * HR)]];
   const virt = f.mkind === 'virtual';
   return (
     <Modal title={a[1] === 're' ? 'Reschedule' : 'Schedule next action'} sub={l.name}
-      foot={<><button className="btn" type="button" data-act="mclose">Cancel</button><button className="btn pri" type="button" data-act={`schedsave|${l.id}`}>Save</button></>}>
+      foot={<><button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button><BusyBtn busy={busy} act={`schedsave|${l.id}`} label="Save" busyLabel="Saving…" /></>}>
       <Fld label="Type">
         <div className="optgrid"><MOpt k="type" v="Follow-up" t="Follow-up" d="Call or message" /><MOpt k="type" v="Meeting" t="Meeting" d="In person or online" /></div>
       </Fld>

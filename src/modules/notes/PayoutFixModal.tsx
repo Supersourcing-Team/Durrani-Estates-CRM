@@ -1,15 +1,16 @@
 /* Resolve a bounced payout (prototype modal payout-fix, args [noteId, payoutNo]). Saves with the payfixed action. */
 import React from 'react';
 import { eng, mfull } from '../../engine';
-import { Fld, MInput, MOpt, Modal } from '../../ui';
+import { BusyBtn, Fld, MInput, MOpt, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 export const PayoutFixModal: ModalComp = ({ args }) => {
   const n = eng.noteById(args[0]), p = n.payouts[+args[1] - 1], e = eng.UI.mf._e || {};
+  const busy = !!eng.UI.mf._busy;
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn pri" type="button" data-act={`payfixed|${n.id}|${p.n}`}>Mark resolved</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} act={`payfixed|${n.id}|${p.n}`} label="Mark resolved" busyLabel="Saving…" />
     </>
   );
   return (

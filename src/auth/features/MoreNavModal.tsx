@@ -4,6 +4,7 @@ import { eng } from '../../engine';
 import { Icon, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { parseHash } from '../../app/route';
+import { SignOutButton } from './SignOutButton';
 
 /** prototype: badgeFor(navKey) */
 function NavBadge({ k }: { k: string }) {
@@ -32,7 +33,7 @@ export const MoreNavModal: ModalComp = () => {
         <div className="navsep" />
         <a className="nl" href={`#${r}-notifications`} data-go={`${r}-notifications`}><Icon n="bell" s={18} /><span>Notifications</span>{unread ? <span className="bdg">{unread}</span> : null}</a>
         {r !== 'admin' ? <a className="nl" href={`#${r}-settings`} data-go={`${r}-settings`}><Icon n="cog" s={18} /><span>Settings</span></a> : null}
-        <button type="button" className="nl" data-act="logout"><Icon n="out" s={18} /><span>Sign out</span></button>
+        <SignOutButton variant="nl" />
       </div>
     </Modal>
   );

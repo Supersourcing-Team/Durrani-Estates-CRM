@@ -1,7 +1,7 @@
 /* Reject a note application document (prototype modal cn-docrej, args [leadId, docKey], 15c-deals). Saves with cnrej. */
 import React from 'react';
 import { eng } from '../../engine';
-import { Fld, MTxa, Modal } from '../../ui';
+import { BusyBtn, Fld, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 
 const WHY = ['Blurry or unreadable', 'Expired', 'Name does not match', 'Page missing', 'Not signed'];
@@ -10,10 +10,11 @@ export const CnDocRejModal: ModalComp = ({ args }) => {
   const UI = eng.UI;
   const t = (eng.CNDOCS as [string, string][]).find((x) => x[0] === args[1])![1];
   const e = UI.mf._e || {};
+  const busy = !!UI.mf._busy;
   const foot = (
     <>
-      <button className="btn" type="button" data-act="mclose">Cancel</button>
-      <button className="btn dng" type="button" data-act={`cnrej|${args[0]}|${args[1]}`}>Reject document</button>
+      <button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button>
+      <BusyBtn busy={busy} cls="btn dng" act={`cnrej|${args[0]}|${args[1]}`} label="Reject document" busyLabel="Rejecting…" />
     </>
   );
   return (

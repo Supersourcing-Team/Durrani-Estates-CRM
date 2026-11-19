@@ -1,5 +1,5 @@
 /**
- * Silently load Module 2/3 API data into eng.S when routes change.
+ * Silently load Module 2/3/4 API data into eng.S when routes change.
  * Existing screens keep their original UI and read from eng as before.
  */
 import { eng, bump, parse, hashOf } from "../engine";
@@ -7,7 +7,13 @@ import { getLead, listLeads } from "../http/leads";
 import { getProject, listProjectUnits, listProjects, listShortlist } from "../http/catalogue";
 import { getBooking, listBookings } from "../http/deals";
 import { getCommission, listCommissions } from "../http/commission";
+import { getSettings } from "../http/settings";
+import { getCnApplication, getCnNote, listCnApplications, listCnNotes } from "../http/convertibleNotes";
 import { upsertUiLead, upsertUiLeads } from "./leads/leadMapper";
+import {
+  hydrateInactivityPolicies,
+  hydrateLeadWorkspace,
+} from "./leads/workspaceBootstrap";
 import {
   applyCommissionToBooking,
   applyShortlistToLead,
@@ -17,6 +23,14 @@ import {
   upsertUiProjects,
   resolveBookingApiId,
 } from "./deals/propertyMappers";
+import {
+  applyOrgSettings,
+  resolveCnNoteApiId,
+  upsertCnApplication,
+  upsertCnApplications,
+  upsertCnNote,
+  upsertCnNotes,
+} from "./notes/cnMappers";
 
 let lastKey = "";
 let inflight: Promise<void> | null = null;
@@ -72,6 +86,11 @@ async function hydrate(hash: string) {
           if (sl.success && sl.data) applyShortlistToLead(id, sl.data);
         } catch {
           /* shortlist optional */
+        }
+        try {
+          await hydrateLeadWorkspace(id);
+        } catch {
+          /* workspace optional */
         }
         bump();
       }
@@ -187,6 +206,81 @@ async function hydrate(hash: string) {
         const res = await listCommissions();
         (res.data || []).forEach(applyCommissionToBooking);
         bump();
+      }
+      return;
+    }
+
+    // ---- Module 4: Org settings + inactivity policies ----
+    if (key === "admin-settings" || key.startsWith("admin-settings")) {
+      try {
+        const res = await getSettings();
+        if (res.success && res.data) applyOrgSettings(res.data);
+      } catch {
+        /* optional */
+      }
+      await hydrateInactivityPolicies();
+      bump();
+      return;
+    }
+
+    // ---- Module 4: Convertible Notes ----
+    if (key === "agent-cn" || key === "mgmt-cn" || key === "admin-cn") {
+      const [apps, notes] = await Promise.all([listCnApplications(), listCnNotes()]);
+      upsertCnApplications(apps.data || []);
+      upsertCnNotes(notes.data || []);
+      bump();
+      return;
+    }
+
+    if (key === "agent-cncalc" || key === "admin-settings-cn") {
+      const res = await getSettings();
+      if (res.success && res.data) {
+        applyOrgSettings(res.data);
+        bump();
+      }
+      return;
+    }
+
+    if (key === "agent-cnapp" || key === "mgmt-cnapp" || key === "admin-cnapp") {
+      const leadId = p[0];
+      if (!leadId) return;
+      try {
+        const leadRes = await getLead(leadId);
+        if (leadRes.success && leadRes.data) upsertUiLead(leadRes.data);
+      } catch {
+        /* optional */
+      }
+      const listed = await listCnApplications({ lead_id: leadId });
+      const hit = (listed.data || [])[0];
+      if (hit) {
+        const detail = await getCnApplication(hit.id);
+        if (detail.success && detail.data) upsertCnApplication(detail.data);
+        else upsertCnApplication(hit);
+      }
+      bump();
+      return;
+    }
+
+    if (key === "agent-cnnote" || key === "mgmt-cnnote" || key === "admin-cnnote") {
+      const slug = p[0];
+      const code = eng.noteF(slug);
+      const local = eng.noteById(code);
+      const apiId = resolveCnNoteApiId(local || code);
+      const res = await getCnNote(apiId);
+      if (res.success && res.data) {
+        upsertCnNote(res.data);
+        bump();
+      }
+      return;
+    }
+
+    // Warm settings once after login-ish routes already covered; also when opening home
+    if (key === "agent-home" || key === "mgmt-home" || key === "admin-home") {
+      try {
+        const res = await getSettings();
+        if (res.success && res.data) applyOrgSettings(res.data);
+      } catch {
+        /* optional */
       }
     }
   } catch {
