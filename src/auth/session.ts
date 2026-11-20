@@ -124,7 +124,6 @@ export function clearEngineSession(): void {
 export async function loginWithApi(opts: {
   email: string;
   password: string;
-  tabRole: AppRole;
   rememberMe?: boolean;
 }): Promise<{ role: AppRole; user: UserProfile }> {
   const data = await apiLogin({
@@ -145,16 +144,6 @@ export async function loginWithApi(opts: {
       "This account role is not supported in the app.",
       "UNSUPPORTED_ROLE",
       "Unsupported role",
-      403,
-    );
-  }
-
-  if (apiRole !== opts.tabRole) {
-    const n = ROLE_NAME[apiRole];
-    throw new ApiError(
-      `This is ${/^[AEIOU]/i.test(n) ? "an" : "a"} ${n} account. Choose ${n} above to sign in.`,
-      "ROLE_MISMATCH",
-      { email: `This is ${/^[AEIOU]/i.test(n) ? "an" : "a"} ${n} account. Choose ${n} above to sign in.` },
       403,
     );
   }

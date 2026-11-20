@@ -9,7 +9,7 @@ import { eng } from '../../engine';
 import { Bn, Fld, Modal, mv } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { errs } from './parts';
-import { AgentOpts, ReasonFld, TeamOpts } from './assignParts';
+import { AgentOpts, AgentPicker, LeadsField, ReasonFld, TeamOpts } from './assignParts';
 
 const TARGETS: [string, string][] = [['agent', 'An agent'], ['team', "A team's queue"]];
 
@@ -18,6 +18,9 @@ export const ReassignModal: ModalComp = ({ args: a }) => {
   const l = eng.leadById(a[0]);
   const role = eng.me().role;
   const admin = role === 'admin';
+  // Admin can add more leads to this assignment; the lead the drawer was opened on starts ticked.
+  if (admin && f.lids == null) { f.lids = l.id; f.scope = l.owner ? 'all' : 'unassigned'; f.q = ''; }
+  const picked = String(f.lids || '').split(',').filter(Boolean);
   const where = l.owner ? eng.uname(l.owner) : l.team ? eng.teamName(l.team) + ' queue' : 'the Admin pool';
   const ag = (admin ? S.users.filter((x: any) => x.role === 'agent' && x.status === 'active') : eng.myTeam())
     .filter((x: any) => x.id !== l.owner)
@@ -40,14 +43,17 @@ export const ReassignModal: ModalComp = ({ args: a }) => {
   );
 
   return (
-    <Modal title={l.owner ? 'Reassign lead' : 'Assign lead'} sub={`${l.name} · LEAD-${l.id} · now with ${where}`}
-      foot={<><button className="btn" type="button" data-act="mclose">Cancel</button><button className="btn pri" type="button" data-act={`reassave|${l.id}`}>{l.owner ? 'Reassign' : 'Assign'}</button></>}>
+    <Modal title={l.owner ? 'Reassign lead' : 'Assign lead'} sub={`${l.name} · LEAD-${l.id} · now with ${where}`} drawer
+      foot={<><button className="btn" type="button" data-act="mclose">Cancel</button><button className="btn pri" type="button" data-act={admin ? `reassave2|${l.id}` : `reassave|${l.id}`}>{admin && picked.length > 1 ? `Assign ${picked.length} leads` : l.owner ? 'Reassign' : 'Assign'}</button></>}>
+      {admin ? <LeadsField e={e} /> : null}
       {admin ? (
-        <div className="seg mb8">
-          {targets.map(([k, t]) => <button key={k} type="button" className={tgt === k ? 'on' : ''} data-act={`mset|tgt|${k}`}>{t}</button>)}
-        </div>
+        <Fld label="Assign to">
+          <div className="seg">
+            {targets.map(([k, t]) => <button key={k} type="button" className={tgt === k ? 'on' : ''} data-act={`mset|tgt|${k}`}>{t}</button>)}
+          </div>
+        </Fld>
       ) : null}
-      <Fld label={admin ? 'Send to' : 'New owner'} err={e.to}>{who}</Fld>
+      {admin && tgt === 'agent' ? <AgentPicker ag={ag} e={e} /> : <Fld label={admin ? 'Send to' : 'New owner'} err={e.to}>{who}</Fld>}
       <ReasonFld e={e} first={!l.owner} />
       {l.esc && l.esc.status === 'open' ? <Bn kind="warn" title="Open escalation" body="The escalation moves with the lead." /> : null}
     </Modal>

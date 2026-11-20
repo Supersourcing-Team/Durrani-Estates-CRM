@@ -4,7 +4,7 @@
  * Tabs: overview, calls, qualify, docs, props, timeline (#agent-lead-1023-calls -> params ['1023', 'calls']).
  */
 import React from 'react';
-import { eng, ini } from '../../engine';
+import { eng, ini, rel } from '../../engine';
 import { AvBox, Bn, Btn, DispChip, Empty, Icon, LeadLinks, StageChip, Tabs, TempChip, TrackChip } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { LeadFlag, LeadTags, Pipeline } from './leadBits';
@@ -80,6 +80,11 @@ export function LeadPage({ role, params }: { role: string; params: string[] }) {
   if (mine && !ro && r.state === 'risk') banners.push(
     <Bn kind="err" title={'At risk: ' + r.left + ' day' + (r.left === 1 ? '' : 's') + ' left'}
       body={'No forward commitment for ' + r.d + ' days. Schedule a follow-up or meeting with a date to keep this lead. Notes and calls alone do not reset the clock.'}
+      acts={<button className="btn pri s" type="button" data-open={`sched|${l.id}`}>Schedule now</button>} />);
+  // Latest nudge from a manager or Admin on this lead (shown to the owning agent).
+  const nudge = mine && !ro ? [...(S.nudges || [])].reverse().find((n: any) => n.lead === l.id && n.by !== u.id) : null;
+  if (nudge) banners.push(
+    <Bn kind="info" title={'Nudge from ' + eng.uname(nudge.by) + ' · ' + rel(nudge.at)} body={nudge.t}
       acts={<button className="btn pri s" type="button" data-open={`sched|${l.id}`}>Schedule now</button>} />);
   if (role !== 'agent' && !ro && r.state === 'risk') banners.push(
     <Bn kind="warn" title={'At risk: ' + r.left + ' day' + (r.left === 1 ? '' : 's') + ' left before auto-return'} body="This lead returns to the Admin pool if the agent makes no forward commitment." />);

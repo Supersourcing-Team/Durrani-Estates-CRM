@@ -1,7 +1,7 @@
 /*
  * L01 Sign in (route #login). Wired to POST /v1/auth/login/ (Module 1).
  * Also the post-invite destination after Create Your Password.
- * Role tabs are UI-only: API returns role.code; mismatch shows inline error.
+ * No role tabs: the role comes from the account (API role.code) and routes to that home.
  */
 import React from "react";
 import { eng, bump, go, homeOf, render } from "../../engine";
@@ -9,34 +9,7 @@ import { Bn, Icon } from "../../ui";
 import type { ScreenComp } from "../../app/types";
 import { LoginFrame } from "./LoginFrame";
 import { AuthHelp, EyeIcon, setPf } from "./authBits";
-import { apiErrorToForm, loginWithApi, type AppRole } from "../session";
-
-const ROLES: { k: AppRole; l: string; ic: React.ReactNode }[] = [
-  { k: "agent", l: "Agent", ic: <Icon n="user" s={17} /> },
-  { k: "mgmt", l: "Management", ic: <Icon n="user" s={17} /> },
-  { k: "admin", l: "Admin", ic: <UserCog /> },
-];
-
-function UserCog() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={17}
-      height={17}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="7" r={4} />
-      <path d="M10.3 15H7a4 4 0 0 0-4 4v2" />
-      <circle cx="18" cy="18" r={3} />
-      <path d="M18 14v1M18 21v1M21.5 16l-.87.5M15.4 19.5l-.87.5M21.5 20l-.87-.5M15.4 16.5l-.87-.5" />
-    </svg>
-  );
-}
+import { apiErrorToForm, loginWithApi } from "../session";
 
 function validateLocal(email: string, password: string): Record<string, string> {
   const e: Record<string, string> = {};
@@ -51,7 +24,6 @@ async function submitLogin() {
   const UI = eng.UI;
   if (UI.pf._busy) return;
 
-  const role: AppRole = UI.pf.role || "agent";
   const email = String(UI.pf.email || "").trim().toLowerCase();
   const password = String(UI.pf.password || "");
 
@@ -73,7 +45,6 @@ async function submitLogin() {
     const { role: signedRole } = await loginWithApi({
       email,
       password,
-      tabRole: role,
       rememberMe: !!UI.pf.remember,
     });
     UI.pf._busy = false;
@@ -98,33 +69,12 @@ export const Login: ScreenComp = () => {
   const S = eng.S;
   const UI = eng.UI;
   const e = UI.pf._e || {};
-  const role: AppRole = UI.pf.role || "agent";
   const lock = !!UI.pf._locked || (S.fails || 0) >= 5;
   const show = UI.pf.showpw === "1";
   const busy = !!UI.pf._busy;
 
   return (
     <LoginFrame bare>
-      <div className="auth-tabs" role="tablist" aria-label="Sign in as">
-        {ROLES.map((r) => (
-          <button
-            key={r.k}
-            type="button"
-            role="tab"
-            aria-selected={role === r.k}
-            className={"auth-tab" + (role === r.k ? " on" : "")}
-            onClick={() => {
-              UI.pf.role = r.k;
-              UI.pf._e = {};
-              bump();
-            }}
-          >
-            {r.ic}
-            {r.l}
-          </button>
-        ))}
-      </div>
-
       <h1 className="auth-h">Welcome back!</h1>
       <p className="auth-sub">Sign in to manage your sales, inventory, and business operations.</p>
 

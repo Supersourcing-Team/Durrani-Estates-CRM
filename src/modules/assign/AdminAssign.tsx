@@ -20,6 +20,7 @@ export const AdminAssign: ScreenComp = () => {
       <PgHead t="Assignments" sub="Leads waiting in the Admin pool. Send them to an agent or to a team queue for the manager to place." right={<>
         <Btn open="assign-info" ic="info">How it works</Btn>
         <Btn open="autodist" ic="zap">Spread evenly</Btn>
+        <Btn open="assign-lead" ic="plus">Assign lead</Btn>
         <Btn cls="pri" open="bulk-reassign" ic="repeat" dis={!sel_.length}>{`Assign ${sel_.length || ''} selected`}</Btn>
       </>} />
 

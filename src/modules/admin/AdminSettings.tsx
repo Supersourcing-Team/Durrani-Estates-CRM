@@ -56,6 +56,7 @@ function RulesTab() {
           <div className="frm">
             <Num k="inactX" label="Days without a next step before a lead is AT RISK" v={st.inactX} min={1} hint="Saved to inactivity policies for property, CN and secondary tracks. A dated next action resets the clock; notes alone do not." />
             <Num k="inactY" label="Further days at risk before it returns to the pool" v={st.inactY} min={1} hint="Grace days on each track policy after the at-risk threshold." />
+            <Num k="noActDays" label="Days with no action before a lead shows under No action" v={st.noActDays} min={1} hint="Powers the No action filter on the Leads page: the agent has made no call, note, meeting, message or stage change for this long." />
           </div>
           <div className="frm">
             <Num k="capDefault" label="Default active lead ceiling per agent" v={st.capDefault} min={1} hint="Each agent can have their own ceiling on their profile." />

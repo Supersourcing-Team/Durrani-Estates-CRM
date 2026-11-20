@@ -1,7 +1,7 @@
 /* AD People & Teams (prototype route admin-people, tabs People and Teams). */
 import React from 'react';
-import { eng } from '../../engine';
-import { Av, Btn, Card, Chip, PgHead, Search, Sel, Tabs } from '../../ui';
+import { eng, actions } from '../../engine';
+import { Av, Btn, Card, Chip, Icon, PgHead, Search, Sel, Tabs } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 
 const UStat = ({ s }: { s: string }) => <Chip t={eng.USTAT[s][0]} cls={eng.USTAT[s][1]} />;
@@ -32,13 +32,40 @@ function TeamCard({ t }: { t: any }) {
   );
 }
 
+/** Inline slab picker for an agent (assigned by Admin; stops the row click from opening the profile). */
+function SlabPick({ u }: { u: any }) {
+  const slabs: any[] = eng.S.set.slabs;
+  return (
+    <div onClick={(ev) => ev.stopPropagation()}>
+      <select className="sel" style={{ minWidth: 130 }} value={u.slab || ''} disabled={u.status === 'removed' || undefined}
+        aria-label={'Slab for ' + u.name}
+        onChange={(ev) => actions().userslab([u.id, ev.target.value])}>
+        <option value="">No slab</option>
+        {slabs.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.rate}%)</option>)}
+      </select>
+    </div>
+  );
+}
+
+/** Deactivate / reactivate / resend invite, plus delete. */
+function RowActions({ u }: { u: any }) {
+  const self = u.id === eng.me().id;
+  return (
+    <div className="row g6">
+      {u.status === 'active' && !self ? <button className="btn s" type="button" data-open={'deactivate|' + u.id}>Deactivate</button> : null}
+      {u.status === 'removed' ? <button className="btn s" type="button" data-act={'reactivate|' + u.id}>Reactivate</button> : null}
+      {u.status === 'invited' ? <button className="btn s" type="button" data-act={'resendinv|' + u.id}>Resend invite</button> : null}
+      {!self ? <button className="iconbtn" type="button" data-act={'userdelask|' + u.id} aria-label={'Delete ' + u.name} title="Delete"><Icon n="trash" s={16} /></button> : null}
+    </div>
+  );
+}
 export const AdminPeople: ScreenComp = ({ params }) => {
   const S = eng.S, UI = eng.UI;
   const tab = params[0] === 'teams' ? 'teams' : 'users';
   const hdr = (
     <>
-      <PgHead t="People & Teams" sub="Create accounts, assign teams, slabs and lead ceilings."
-        right={tab === 'users' ? <Btn cls="pri" open="user-form" ic="plus">Add user</Btn> : <Btn cls="pri" open="team-form" ic="plus">Add team</Btn>} />
+      <PgHead t="People & Teams" sub="Agents and managers: create accounts, assign teams, commission slabs and lead ceilings."
+        right={tab === 'users' ? <Btn cls="pri" open="user-form" ic="plus">Add person</Btn> : <Btn cls="pri" open="team-form" ic="plus">Add team</Btn>} />
       <Tabs cur={tab} items={[{ k: 'users', l: 'People', go: 'admin-people', n: S.users.length }, { k: 'teams', l: 'Teams', go: 'admin-people-teams', n: S.teams.length }]} />
     </>
   );
@@ -46,6 +73,7 @@ export const AdminPeople: ScreenComp = ({ params }) => {
 
   const q = (UI.f.upq || '').toLowerCase(), r = UI.f.upr || 'all', s = UI.f.ups || 'all';
   const l: any[] = S.users.filter((u: any) => (r === 'all' || u.role === r) && (s === 'all' || u.status === s) && (!q || (u.name + u.email + u.emp).toLowerCase().includes(q)));
+  const agents = l.some((u) => u.role === 'agent');
   return (
     <>
       {hdr}
@@ -57,7 +85,7 @@ export const AdminPeople: ScreenComp = ({ params }) => {
       <Card bare>
         <div className="tw">
           <table className="tbl">
-            <thead><tr><th>Person</th><th>Employee ID</th><th>Role</th><th>Team</th><th>Slab</th><th className="num">Leads</th><th>Status</th></tr></thead>
+            <thead><tr><th>Person</th><th>Employee ID</th><th>Role</th><th>Team</th>{agents ? <th>Slab</th> : null}{agents ? <th className="num">Leads</th> : null}<th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               {l.map((u) => (
                 <tr key={u.id} className="click" data-go={'admin-user-' + u.id}>
@@ -73,9 +101,10 @@ export const AdminPeople: ScreenComp = ({ params }) => {
                   <td className="sm">{u.emp}</td>
                   <td className="sm">{eng.ROLEN[u.role]}{u.tag ? ' · ' + u.tag : ''}</td>
                   <td className="sm">{u.team ? eng.teamName(u.team) : <span className="faint">None</span>}</td>
-                  <td className="sm">{u.role === 'agent' ? (u.slab ? S.set.slabs.find((x: any) => x.id === u.slab).name : <span className="dangertx">None</span>) : null}</td>
-                  <td className="num">{u.role === 'agent' ? <>{eng.capInfo(u.id).used}<span className="faint">/{eng.capOf(u)}</span></> : null}</td>
+                  {agents ? <td className="sm">{u.role === 'agent' ? <SlabPick u={u} /> : null}</td> : null}
+                  {agents ? <td className="num">{u.role === 'agent' ? <>{eng.capInfo(u.id).used}<span className="faint">/{eng.capOf(u)}</span></> : null}</td> : null}
                   <td><UStat s={u.status} /></td>
+                  <td><RowActions u={u} /></td>
                 </tr>
               ))}
             </tbody>

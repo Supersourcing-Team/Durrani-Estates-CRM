@@ -1,11 +1,9 @@
 /* AD06 Admin Home Dashboard (prototype route admin-home). */
 import React from 'react';
-import { eng, money, fd, rel, sum, HR } from '../../engine';
-import { Bn, Card, Chip, Dl, Empty, Kpi, LeadLinks, PgHead } from '../../ui';
+import { eng, money, fd, rel, sum } from '../../engine';
+import { Card, Chip, Dl, Empty, Kpi, LeadLinks, PgHead } from '../../ui';
 import type { ScreenComp } from '../../app/types';
 import { Tc } from './parts';
-
-const plural = (n: number, w: string) => n + ' ' + w + (n > 1 ? 's' : '');
 
 export const AdminHome: ScreenComp = () => {
   const S = eng.S;
@@ -16,19 +14,6 @@ export const AdminHome: ScreenComp = () => {
   const agents: any[] = eng.agentsAll();
   const rev = sum(agents, (u: any) => eng.revOf(u.id));
   const elig = S.bookings.filter((b: any) => eng.comm(b).st === 'eligible');
-  const soon = S.bookings.filter((b: any) => ['pending', 'changes'].includes(b.status) && b.holdUntil && b.holdUntil - NOW < 8 * HR && b.holdUntil > NOW);
-  const escs = S.leads.filter((l: any) => l.esc && l.esc.status === 'open');
-  const bounced: number = eng.bouncedN();
-  const flagged: number = eng.flaggedCalls();
-
-  const alerts: React.ReactNode[] = [];
-  if (soon.length) alerts.push(<Bn key="hold" kind="warn" title={plural(soon.length, 'unit hold') + ' about to expire'} body="Decide before the unit goes back on sale."
-    acts={<a className="btn s" href="#admin-review" data-go="admin-review">Review</a>} />);
-  if (bounced) alerts.push(<Bn key="bounce" kind="err" title={plural(bounced, 'bounced payout')} body="A convertible note cheque did not clear."
-    acts={<a className="btn s" href="#admin-cn" data-go="admin-cn">Open notes</a>} />);
-  if (flagged) alerts.push(<Bn key="calls" kind="warn" title={plural(flagged, 'call') + ' with a duration mismatch'} body="Logged time is far from the app estimate."
-    acts={<a className="btn s" href="#admin-audit" data-go="admin-audit">Audit log</a>} />);
-  if (escs.length) alerts.push(<Bn key="esc" kind="info" title={plural(escs.length, 'escalation') + ' open with managers'} body="Shown for awareness. Managers decide." />);
 
   const teamRows = S.teams.map((t: any) => {
     const ag: any[] = eng.agentsOf(t.id);
@@ -44,7 +29,6 @@ export const AdminHome: ScreenComp = () => {
         <Kpi l="Revenue" n={money(rev)} d="Approved and closed bookings" go="admin-reports" />
         <Kpi l="Incentives ready" n={String(elig.length)} d={money(sum(elig, (b: any) => eng.comm(b).inc)) + ' to release'} go="admin-commission" />
       </div>
-      {alerts.length ? <div className="col mb16">{alerts}</div> : null}
 
       <div className="grid g21">
         <div className="col g16">

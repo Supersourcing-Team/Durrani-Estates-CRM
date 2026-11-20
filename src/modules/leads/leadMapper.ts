@@ -4,6 +4,7 @@
  */
 import { eng } from "../../engine";
 import type { LeadDetail, LeadListItem, LeadQualification } from "../../http/leads.types";
+import { rememberLeadSource } from "../../http/leadSources";
 
 function parseMoney(v: string | number | null | undefined): number | "" {
   if (v == null || v === "") return "";
@@ -88,6 +89,7 @@ export function mapApiLeadToUi(api: LeadListItem | LeadDetail, prev?: any): any 
       : (api as LeadDetail).lead_source?.name || prev?.src || "Direct";
 
   const detail = api as LeadDetail;
+  rememberLeadSource(detail.lead_source);
   const qual = mapQualification(detail.qualification ?? null, api.track);
   const ownerId = ensureApiOwner(api.owner);
   const lastAct = parseTs(api.last_activity_at) || parseTs(api.created_at) || eng.NOW();
@@ -116,6 +118,7 @@ export function mapApiLeadToUi(api: LeadListItem | LeadDetail, prev?: any): any 
     phone: customer?.phone || prev?.phone || "",
     email: customer?.email || prev?.email || "",
     city: customer?.city || prev?.city || "",
+    nationality: customer?.nationality || prev?.nationality || "",
     country: customer?.country || prev?.country || "United Arab Emirates",
     src: sourceName,
     camp: detail.campaign != null ? String(detail.campaign) : prev?.camp || sourceName,

@@ -8,6 +8,7 @@ import { AdminImportNew } from './AdminImportNew';
 import { EscRespondModal } from './EscRespondModal';
 import { AssignInfoModal } from './AssignInfoModal';
 import { AutodistModal } from './AutodistModal';
+import { AssignLeadModal } from './AssignLeadModal';
 import { BulkReassignModal } from './BulkReassignModal';
 
 export { AgentOpts, TeamOpts, ReasonFld } from './parts';
@@ -26,4 +27,5 @@ export const modals: ModalMap = {
   'assign-info': AssignInfoModal,
   'autodist': AutodistModal,
   'bulk-reassign': BulkReassignModal,
+  'assign-lead': AssignLeadModal,
 };

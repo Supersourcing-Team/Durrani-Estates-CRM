@@ -9,11 +9,13 @@ import { eng } from '../../engine';
 import { Bn, BusyBtn, Fld, MInput, MSel, MTxa, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { errs } from './parts';
+import { leadSourceOptions } from '../../http/leadSources';
 
 export const AddLeadModal: ModalComp = () => {
   const f = eng.UI.mf, e = errs();
   const res = f._res;
   const busy = !!f._busy;
+  const srcOpts: [string, string][] = leadSourceOptions().map((s) => [String(s.id), s.name]);
   const lk = `${eng.me().role}-lead-${res && res.lead}`;
   const close = <button className="btn" type="button" data-act="mclose">Close</button>;
   if (res) {
@@ -25,11 +27,11 @@ export const AddLeadModal: ModalComp = () => {
     );
   }
   return (
-    <Modal title="Add a lead" sub="For clients who came to you directly. Campaign leads arrive through Admin."
+    <Modal drawer title="Add a lead" sub="For clients who came to you directly. Campaign leads arrive through Admin."
       foot={<><button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button><BusyBtn busy={busy} act="addlead" label="Check and add" busyLabel="Adding…" /></>}>
       <div className="frm">
         <Fld label="Full name" htmlFor="m_name" err={e.name}><MInput k="name" bad={!!e.name} /></Fld>
-        <Fld label="Source" htmlFor="m_src" err={e.src}><MSel k="src" opts={['Walk-in', 'Referral', 'Exhibition', 'Own network']} bad={!!e.src} blank="Choose source" /></Fld>
+        <Fld label="Source" htmlFor="m_src" err={e.src}><MSel k="src" opts={srcOpts.length ? srcOpts : ['Walk-in', 'Referral', 'Exhibition', 'Own network']} bad={!!e.src} blank="Choose source" /></Fld>
         <Fld label="Country code" htmlFor="m_cc"><MSel k="cc" opts={['+971', '+91', '+65', '+966', '+44']} blank={false} /></Fld>
         <Fld label="Phone number" htmlFor="m_ph" err={e.ph}><MInput k="ph" type="tel" bad={!!e.ph} ph="50 123 4567" /></Fld>
         <div className="full"><Fld label="Email (optional)" htmlFor="m_email" err={e.email}><MInput k="email" type="email" bad={!!e.email} /></Fld></div>

@@ -40,7 +40,10 @@ export function installEvents(): void {
     if (t.hasAttribute('disabled')) return;
     if (t.dataset.act != null) {
       if (t.dataset.act === 'mbg' || t.dataset.act === 'cbg') { if (target !== t) return; }
-      e.preventDefault(); runAct(t.dataset.act, t); return;
+      // A cancelled checkbox click makes the browser revert its tick after we re-render, so the box
+      // and the stored selection drift apart. Let checkboxes toggle natively; the re-render syncs them.
+      if (!(t instanceof HTMLInputElement && t.type === 'checkbox')) e.preventDefault();
+      runAct(t.dataset.act, t); return;
     }
     if (t.dataset.open != null) { e.preventDefault(); const p = t.dataset.open.split('|'); openM(p[0], p.slice(1)); return; }
     if (t.dataset.go != null) { e.preventDefault(); if (UI().m) closeM(); UI().notif = false; eng.go(t.dataset.go); return; }

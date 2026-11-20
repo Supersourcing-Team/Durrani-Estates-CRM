@@ -6,8 +6,9 @@ import type { LeadTabProps } from './LeadScreen';
 
 export function LeadProps({ role, l }: LeadTabProps) {
   const mine = role === 'agent' && !l.archived;
+  const admin = role === 'admin' && !l.archived;
   return (
-    <Card title="Shortlisted properties" right={mine ? <a className="btn s" href="#agent-catalogue" data-go="agent-catalogue"><Icon n="plus" s={14} />Add from catalogue</a> : null}>
+    <Card title="Shortlisted properties" right={mine ? <a className="btn s" href="#agent-catalogue" data-go="agent-catalogue"><Icon n="plus" s={14} />Add from catalogue</a> : admin ? <button className="btn s" type="button" data-act={`leadshortopen|${l.id}`}><Icon n="plus" s={14} />Add property</button> : null}>
       {l.shortlist.length ? (
         <div className="lcols">
           {l.shortlist.map((s: any) => {
@@ -28,13 +29,15 @@ export function LeadProps({ role, l }: LeadTabProps) {
                       <a className="btn s pri" href={`#agent-bookingnew-${l.id}-${p.id}`} data-go={`agent-bookingnew-${l.id}-${p.id}`}>Start booking</a>
                       <button className="btn s" type="button" data-act={`shortdel|${l.id}|${p.id}`}>Remove</button>
                     </>
+                  ) : admin ? (
+                    <button className="btn s" type="button" data-act={`shortdel|${l.id}|${p.id}`}>Remove</button>
                   ) : null}
                 </div>
               </div>
             );
           })}
         </div>
-      ) : <Empty icn="building" t="Nothing shortlisted" d="Browse the catalogue and add projects this client likes." act={mine ? <Btn t="Open catalogue" go="agent-catalogue" cls="pri" /> : null} />}
+      ) : <Empty icn="building" t="Nothing shortlisted" d="Browse the catalogue and add projects this client likes." act={mine ? <Btn t="Open catalogue" go="agent-catalogue" cls="pri" /> : admin ? <button className="btn pri" type="button" data-act={`leadshortopen|${l.id}`}>Add property</button> : null} />}
     </Card>
   );
 }

@@ -19,10 +19,15 @@ export const apiEndpoints = {
   leads: {
     list: "/v1/leads/",
     byId: (id: string | number) => `/v1/leads/${id}/`,
-    qualify: (id: string | number) => `/v1/leads/${id}/qualify/`,
+    profile: (id: string | number) => `/v1/leads/${id}/profile/`,
+    qualification: (id: string | number) => `/v1/leads/${id}/qualification/`,
     archive: (id: string | number) => `/v1/leads/${id}/archive/`,
     dnd: (id: string | number) => `/v1/leads/${id}/dnd/`,
     removeDnd: (id: string | number) => `/v1/leads/${id}/remove-dnd/`,
+  },
+  /** Lead sources list: not in the API doc yet, so these are tried in order (see http/leadSources.ts). */
+  leadSources: {
+    candidates: ["/v1/lead-sources/", "/v1/leads/sources/", "/v1/leads/lead-sources/", "/v1/sources/"],
   },
   /** Lead Pipeline — Workspace */
   workspace: {
