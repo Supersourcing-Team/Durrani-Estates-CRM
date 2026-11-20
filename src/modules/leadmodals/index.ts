@@ -16,6 +16,9 @@ import { BlockedModal } from './BlockedModal';
 import { ReassignModal } from './ReassignModal';
 import { HoldModal } from './HoldModal';
 import { NudgeModal } from './NudgeModal';
+import { LeadEditModal } from './LeadEditModal';
+import { LeadQualEditModal } from './LeadQualEditModal';
+import { LeadShortlistAddModal } from './LeadShortlistAddModal';
 
 export { AgentOpts, TeamOpts, ReasonFld } from './assignParts';
 
@@ -38,4 +41,8 @@ export const modals: ModalMap = {
   reassign: ReassignModal,
   hold: HoldModal,
   nudge: NudgeModal,
+  // Admin lead editing
+  'lead-edit': LeadEditModal,
+  'lead-qual-edit': LeadQualEditModal,
+  'lead-shortlist-add': LeadShortlistAddModal,
 };

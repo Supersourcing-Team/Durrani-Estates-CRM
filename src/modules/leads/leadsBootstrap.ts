@@ -17,12 +17,16 @@ import {
   createLead,
   getLead,
   markLeadDnd,
-  qualifyLead,
   removeLeadDnd,
-  updateLead,
+  updateLeadProfile,
+  updateLeadQualification,
 } from "../../http/leads";
 import { ApiError } from "../../http/types";
+import { loadLeadSources, resolveLeadSourceId } from "../../http/leadSources";
 import { splitFullName, upsertUiLead } from "./leadMapper";
+import { syncLeadCnApplication } from "../notes/cnBootstrap";
+import { diffFields, logLeadEdit } from "./leadEditLog";
+import { mapPayment, mapPtype, mapPurpose, mapTimeline } from "./qualMaps";
 
 function toE164ish(cc: string, ph: string): string {
   const digits = String(ph || "").replace(/\D/g, "");
@@ -93,6 +97,13 @@ async function addLeadFromForm() {
     return;
   }
 
+  const sourceId = resolveLeadSourceId(f.src);
+  if (sourceId == null) {
+    f._e = { src: "This source is not set up on the server. Pick another source." };
+    renderOverlay();
+    return;
+  }
+
   const { first_name, last_name } = splitFullName(name);
   const phone = toE164ish(cc, String(f.ph || ""));
 
@@ -106,6 +117,7 @@ async function addLeadFromForm() {
       last_name,
       phone,
       email: email || undefined,
+      lead_source_id: sourceId,
       country:
         cc === "+971"
           ? "United Arab Emirates"
@@ -142,6 +154,7 @@ async function addLeadFromForm() {
       ...(fe.first_name || fe.last_name ? { name: fe.first_name || fe.last_name } : {}),
       ...(fe.phone ? { ph: fe.phone } : {}),
       ...(fe.email ? { email: fe.email } : {}),
+      ...(fe.lead_source_id ? { src: fe.lead_source_id } : {}),
     };
     if (!Object.keys(f._e).length) {
       f._e = {
@@ -184,41 +197,28 @@ async function saveQualification(id: string) {
   const cur = String(g("cur", l.cur || "AED"));
   const notes = String(g("qnotes", l.qualNotes || "")).trim();
 
-  const mapTimeline = (t: string) => {
-    if (/0 to 3|immediate/i.test(t)) return "immediate";
-    if (/3 to 6/i.test(t)) return "3_months";
-    if (/6 to 12/i.test(t)) return "6_months";
-    return t || "";
-  };
-  const mapPayment = (t: string) => {
-    const x = t.toLowerCase();
-    if (x.includes("cash")) return "cash";
-    if (x.includes("mortgage")) return "mortgage";
-    if (x.includes("plan")) return "payment_plan";
-    return t || "";
-  };
-  const mapPurpose = (t: string) => {
-    const x = t.toLowerCase();
-    if (x.includes("invest")) return "investment";
-    if (x.includes("own") || x.includes("end")) return "end_use";
-    return t || "";
-  };
-  const mapPtype = (t: string) => {
-    const x = t.toLowerCase();
-    if (x.includes("off-plan") || x.includes("off plan")) return "off_plan";
-    if (x.includes("villa")) return "villa";
-    if (x.includes("town")) return "townhouse";
-    if (x.includes("commercial")) return "commercial";
-    if (x.includes("apartment") || x.includes("ready")) return "apartment";
-    return t || "";
-  };
+
+  const qualDiff = diffFields([
+    ["Track", l.track ? eng.TRACKS[l.track] : "", trk ? eng.TRACKS[trk] : ""],
+    ["Budget from", l.budget?.[0], b0],
+    ["Budget to", l.budget?.[1], b1],
+    ["Currency", l.cur || "AED", cur],
+    ["Property type", l.ptype, ptype],
+    ["Timeline", l.timeline, timeline],
+    ["Payment", l.payment, payment],
+    ["Purpose", l.purpose, purpose],
+    ["Visa interest", l.visa, visa],
+    ["Notes", l.qualNotes, notes],
+  ]);
 
   UI.pf._busy = true;
   UI.pf._e = {};
   bump();
 
   try {
-    await updateLead(id, {
+    // PUT /v1/leads/{id}/qualification/ saves the track, budget, requirements and notes in one call.
+    await updateLeadQualification(id, {
+      track: trk,
       budget_min: b0,
       budget_max: b1,
       budget_currency: cur,
@@ -227,21 +227,27 @@ async function saveQualification(id: string) {
       payment_method: mapPayment(payment),
       purchase_purpose: mapPurpose(purpose),
       visa_required: /interest/i.test(visa),
-      arabic_speaking: !!l.arabic,
-      temperature: l.temp || undefined,
-      requirement_summary: l.requirement || undefined,
-    });
-
-    // Qualify from primary track (existing Qual UI is single-track).
-    await qualifyLead(id, {
-      track: trk,
-      property_sales: trk === "property",
-      convertible_notes: trk === "cn",
-      secondary_market: trk === "secondary",
       notes,
     });
 
     await refreshLead(id);
+    // CN track: make sure the Convertible Note application exists so the CN card shows.
+    if (trk === "cn") {
+      try {
+        await syncLeadCnApplication(id, { create: true });
+      } catch {
+        /* optional */
+      }
+    }
+    if (qualDiff.count) {
+      logLeadEdit(
+        id,
+        `Qualification edited by ${eng.me().name}: ${qualDiff.text}`,
+        qualDiff.before,
+        qualDiff.after,
+        "Lead qualification edited",
+      );
+    }
     UI.pf._busy = false;
     toast("Qualification saved", "ok");
     render();
@@ -334,7 +340,16 @@ async function setTemperature(id: string, temp: string) {
   l.temp = temp;
   bump();
   try {
-    await updateLead(id, { temperature: temp });
+    const { first_name, last_name } = splitFullName(l.name);
+    await updateLeadProfile(id, {
+      first_name,
+      last_name,
+      phone: l.phone,
+      email: l.email || null,
+      city: l.city,
+      country: l.country,
+      temperature: temp,
+    });
     toast("Marked " + temp, "ok");
     await refreshLead(id);
   } catch (err) {
@@ -363,7 +378,7 @@ function escHtml(s: string) {
   );
 }
 
-/** Confirm then call POST …/remove-dnd/ (Admin). */
+/** Confirm then call POST �/remove-dnd/ (Admin). */
 function askRemoveDnd(id: string) {
   const l = eng.leadById(id);
   const label = l ? `<b>${escHtml(l.phone)}</b>` : "this number";
@@ -404,6 +419,16 @@ async function removeDndFromSettingsIndex(index: number) {
 }
 
 export function installLeadsApiOverrides(): void {
+  const addLeadDef = eng.MD["add-lead"];
+  if (addLeadDef) {
+    const init0 = addLeadDef.init;
+    addLeadDef.init = (...args: any[]) => {
+      void loadLeadSources().then(() => {
+        if (eng.UI.m === "add-lead") renderOverlay();
+      });
+      return init0 ? init0(...args) : {};
+    };
+  }
   const A = actions();
   A.addlead = () => {
     void addLeadFromForm();

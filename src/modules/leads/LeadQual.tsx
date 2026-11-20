@@ -1,10 +1,11 @@
 /*
  * A04 Lead detail, Qualification tab (prototype: leadQual(role, l) in 06-leads.js).
- * The agent edits page fields (UI.pf) and saves with the qualsave action; others see a read-only summary.
+ * The agent edits page fields (UI.pf) and saves with the qualsave action; Admin sees the summary with an Edit drawer; others see a read-only summary.
  */
 import React from 'react';
 import { eng, money } from '../../engine';
-import { BusyBtn, Card, Fld, Kvs, PfInput, PfSel } from '../../ui';
+import { BusyBtn, Card, Fld, Icon, Kvs, PfInput, PfSel } from '../../ui';
+import { qualLabel } from './qualMaps';
 import type { LeadTabProps } from './LeadScreen';
 
 export function LeadQual({ role, l }: LeadTabProps) {
@@ -15,15 +16,15 @@ export function LeadQual({ role, l }: LeadTabProps) {
   const busy = !!eng.UI.pf._busy;
   if (!mine) {
     return (
-      <Card title="Qualification">
+      <Card title="Qualification" right={role === 'admin' && !l.archived ? <button className="btn s" type="button" data-open={`lead-qual-edit|${l.id}`}><Icon n="edit" s={14} />Edit</button> : null}>
         <Kvs items={[
           ['Qualified', l.qualified ? 'Yes' : 'Not yet'],
           ['Track', l.track ? eng.TRACKS[l.track] : 'Not set'],
           ['Budget', l.budget ? money(l.budget[0], cur) + ' to ' + money(l.budget[1], cur) : 'Not captured'],
-          ['Property type', l.ptype || 'Not captured'],
-          ['Timeline', l.timeline || 'Not captured'],
-          ['Payment', l.payment || 'Not captured'],
-          ['Purpose', l.purpose || 'Not captured'],
+          ['Property type', qualLabel(l.ptype) || 'Not captured'],
+          ['Timeline', qualLabel(l.timeline) || 'Not captured'],
+          ['Payment', qualLabel(l.payment) || 'Not captured'],
+          ['Purpose', qualLabel(l.purpose) || 'Not captured'],
           ['Visa interest', l.visa || 'Not captured'],
         ]} />
       </Card>

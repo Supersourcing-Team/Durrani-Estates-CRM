@@ -101,7 +101,7 @@ export function LeadOverview({ role, l }: LeadTabProps) {
     <div className="grid g21">
       <div className="col g16">
         <NextCard role={role} l={l} />
-        <Card title="Profile">
+        <Card title="Profile" right={role === 'admin' && !l.archived ? <button className="btn s" type="button" data-open={`lead-edit|${l.id}`}><Icon n="edit" s={14} />Edit details</button> : null}>
           <Kvs items={[
             ['Phone', <>{l.phone} <button className="btn lnk xs" type="button" data-act={`copy|${l.phone}`}>Copy</button></>],
             ['Email', l.email],

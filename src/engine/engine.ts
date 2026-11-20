@@ -355,7 +355,7 @@ const sec=[
 const att=[];const days=14;for(let i=days;i>=1;i--){const d=T(0,0,-i);const dow=new Date(d+4*HR).getUTCDay();if(dow===0||dow===6)continue;let st='Present',inn=T(9,15,-i),out=T(19,0,-i);if(i===6){st='Late';inn=T(11,15,-i)}if(i===9){st='Miss punch';out=null}if(i===11){st='Absent';inn=null;out=null}if(i===4){st='Early leave';out=T(16,30,-i)}att.push({u:'u10',date:d,in:inn,out,st,reg:i===9?'none':null})}
 bks.forEach(b=>{});
 const S0={now,session:null,users:U,teams:TEAMS,leads,projects:PROJ,bookings:bks,notes,sec,att,
- set:{inactX:7,inactY:3,capDefault:40,holdHours:48,holdCap:3,speed:10,fx:22.7,relDubai:30,dispositions:['Interested','Follow up','Meeting fixed','Not interested'],slabs:SLABS,cn:{tenure:36,rate:1.5,cur:['INR','AED'],min:null},targets:{agent:{rev:2600000,book:3,calls:160,meet:30,fu:90},mgmt:{rev:11500000,book:16}},checklist:{property:['Booking form (fixed)','Deposit receipt (fixed)','Signed SPA','4% DLD fee and Oqood receipt','Oqood certificate'],cn:['KYC: passport or Emirates ID','Nominee details','Signed agreement','PDC register','Registration payment receipt','Payout bank details']}},
+ set:{inactX:7,inactY:3,noActDays:2,capDefault:40,holdHours:48,holdCap:3,speed:10,fx:22.7,relDubai:30,dispositions:['Interested','Follow up','Meeting fixed','Not interested'],slabs:SLABS,cn:{tenure:36,rate:1.5,cur:['INR','AED'],min:null},targets:{agent:{rev:2600000,book:3,calls:160,meet:30,fu:90},mgmt:{rev:11500000,book:16}},checklist:{property:['Booking form (fixed)','Deposit receipt (fixed)','Signed SPA','4% DLD fee and Oqood receipt','Oqood certificate'],cn:['KYC: passport or Emirates ID','Nominee details','Signed agreement','PDC register','Registration payment receipt','Payout bank details']}},
  unlogged:{},punch:{u10:{in:false,t:null,brk:false},u11:{in:true,t:T(9,5),brk:false},u12:{in:true,t:T(10,12),brk:false},u13:{in:false},u14:{in:false},u15:{in:true,t:T(9,20),brk:false}},
  todayAtt:{u10:null,u11:{st:'Present',in:T(9,5)},u12:{st:'Late',in:T(10,12)},u13:{st:'Absent'},u14:{st:'On leave'},u15:{st:'Present',in:T(9,20)}},
  leave:[{id:'lv1',user:'u10',type:'Casual leave',from:T(0,0,-20),to:T(0,0,-19),days:2,reason:'Family event',status:'approved',by:'u2',at:T(9,0,-24)},{id:'lv2',user:'u11',type:'Casual leave',from:T(0,0,6),to:T(0,0,6),days:1,reason:'Family event',status:'pending'},{id:'lv3',user:'u12',type:'Casual leave',from:T(0,0,12),to:T(0,0,14),days:3,reason:'Travel',status:'pending'},{id:'lv4',user:'u13',type:'Casual leave',from:T(0,0,8),to:T(0,0,9),days:2,reason:'Personal work',status:'pending'},{id:'lv5',user:'u14',type:'Sick leave',from:T(0,0,0),to:T(0,0,2),days:3,reason:'Medical rest',status:'approved',by:'u2',at:T(9,0,-1)},{id:'lv6',user:'u16',type:'Casual leave',from:T(0,0,10),to:T(0,0,11),days:2,reason:'Travel',status:'pending'}],
@@ -462,6 +462,10 @@ function initState(){S=seed();syncUnits();
  notify('u10',{t:'Booking BKG-10009 rejected',d:'Developer form not signed. Unit U-4102 released.',go:'agent-booking-bk10009',ic:'file'});
  notify('u10',{t:'Follow-up due: Emma Wilson',d:'11:30 today, discuss 36-month schedule',go:'agent-lead-2047',ic:'clock'});
  notify('u10',{t:'Lead at risk: Karan Malhotra',d:'1 day left before it returns to the pool',go:'agent-lead-1035',ic:'alert'});
+ /* Admin nudge on the at-risk lead: timeline entry, nudge record and the agent's notification */
+ {const nl=S.leads.find(l=>l.id==='1035'),nt='Please schedule the next step on this lead today. This one returns to the pool tomorrow.';
+  if(nl){S.nudges.push({lead:'1035',by:adm,at:NOW()-40*MIN,t:nt});nl.ev.push({t:NOW()-40*MIN,k:'note',txt:'Manager nudge: '+nt,by:adm,x:{}});
+   notify('u10',{t:'Nudge from '+userById(adm).name,d:nt,go:'agent-lead-1035',ic:'bell'})}}
  notify('u10',{t:'Escalation received by manager',d:'Mohit Kapoor is reviewing the discount request on LEAD-2045',go:'agent-lead-2045',ic:'flag'});
  notify('u2',{t:'Escalation from Archit Batham',d:'LEAD-2045: discount request on U-3102',go:'mgmt-leads-esc',ic:'flag'});
  notify('u2',{t:'Leave requests need your approval',d:'3 pending in Dubai Sales',go:'mgmt-leave',ic:'cal'});
@@ -1263,6 +1267,10 @@ function v6seed(){
  S.leads.filter(l=>!l.owner&&!l.archived&&l.camp==='Instagram · Creekside Oct').slice(0,4).forEach(l=>{l.team='t1';l.own=l.own||[];l.own.unshift({from:null,to:null,team:'t1',reason:'Routing rule: Creekside form goes to Dubai Sales',by:'system',at:l.created||NOW()})});
 }
 {const _is=initState;initState=function(){_is();v6seed()}}
+/* alerts that used to be banners on the Admin Home Dashboard now arrive as notifications for Admin */
+{const _is=initState;initState=function(){_is();const bn=bouncedN(),en=S.leads.filter(l=>l.esc&&l.esc.status==='open').length;
+ if(bn)notify('u1',{t:bn+' bounced payout'+(bn>1?'s':''),d:'A convertible note cheque did not clear.',go:'admin-cn',ic:'alert'});
+ if(en)notify('u1',{t:en+' escalation'+(en>1?'s':'')+' open with managers',d:'Shown for awareness. Managers decide.',go:'admin-leads',ic:'flag'})}}
 
 /* ---------- request status, actions, undo ---------- */
 

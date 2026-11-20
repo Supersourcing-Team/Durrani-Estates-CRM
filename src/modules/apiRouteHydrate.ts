@@ -10,6 +10,7 @@ import { getCommission, listCommissions } from "../http/commission";
 import { getSettings } from "../http/settings";
 import { getCnApplication, getCnNote, listCnApplications, listCnNotes } from "../http/convertibleNotes";
 import { upsertUiLead, upsertUiLeads } from "./leads/leadMapper";
+import { syncLeadCnApplication } from "./notes/cnBootstrap";
 import {
   hydrateInactivityPolicies,
   hydrateLeadWorkspace,
@@ -91,6 +92,14 @@ async function hydrate(hash: string) {
           await hydrateLeadWorkspace(id);
         } catch {
           /* workspace optional */
+        }
+        // CN-track lead: load its Convertible Note application (read-only) for the CN card.
+        if (res.data.track === "cn") {
+          try {
+            await syncLeadCnApplication(id);
+          } catch {
+            /* optional */
+          }
         }
         bump();
       }

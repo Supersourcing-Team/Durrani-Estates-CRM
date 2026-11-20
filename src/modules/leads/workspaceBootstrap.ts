@@ -113,14 +113,38 @@ export function applyRuleStatus(lead: any, status: Awaited<ReturnType<typeof get
   lead._returnAt = status.return_at;
 }
 
-export function mapTimelineToEv(items: Array<{ kind?: string; description?: string; created_at?: string; id?: number }>) {
+/** Map an API activity `kind` to the timeline icon/filter kind the UI uses. */
+function evKind(kind?: string): string {
+  const k = String(kind || "").toLowerCase();
+  if (/call/.test(k)) return "call";
+  if (/whatsapp|^wa/.test(k)) return "wa";
+  if (/meet/.test(k)) return "meet";
+  if (/note/.test(k)) return "note";
+  if (/doc/.test(k)) return "doc";
+  if (/stage|qualif|status|booking|disposition/.test(k)) return "stage";
+  if (/owner|assign|hold|reassign|claim/.test(k)) return "owner";
+  if (/escal|warn|risk|inactiv|dnd|archiv/.test(k)) return "warn";
+  return "sys";
+}
+
+/** Timeline event shape used by the engine: { t: ms, k, txt, by, x }. */
+export function mapTimelineToEv(items: Array<{ kind?: string; description?: string; created_at?: string; id?: number; actor?: number }>) {
   return items.map((a) => ({
     id: a.id != null ? `api-ev-${a.id}` : undefined,
-    k: a.kind || "sys",
-    t: a.description || "",
-    at: a.created_at ? Date.parse(a.created_at) : eng.NOW(),
+    k: evKind(a.kind),
+    txt: a.description || "",
+    t: a.created_at ? Date.parse(a.created_at) : eng.NOW(),
+    by: a.actor != null ? String(a.actor) : null,
+    x: {},
     _api: true,
   }));
+}
+
+/** Local timeline entry that the next server timeline load replaces (avoids duplicates). */
+function addEvLocal(l: any, k: string, txt: string) {
+  eng.addEv(l, k, txt);
+  const ev = l.ev?.[l.ev.length - 1];
+  if (ev) ev._pending = true;
 }
 
 export function mapCallsToUi(
@@ -192,7 +216,7 @@ async function saveNote(id: string) {
   try {
     const cycle = await ensureCycle(l);
     await createNote(id, text, cycle);
-    eng.addEv(l, "note", "Note: " + text);
+    addEvLocal(l, "note", "Note: " + text);
     f._busy = false;
     closeM();
     toast("Note saved", "ok");
@@ -414,7 +438,7 @@ async function saveHold(id: string) {
       reason: String(f.why).trim(),
       at: eng.NOW(),
     };
-    eng.addEv(l, "owner", "Manager hold placed: " + String(f.why).trim());
+    addEvLocal(l, "owner", "Manager hold placed: " + String(f.why).trim());
     f._busy = false;
     closeM();
     toast("Lead on hold. Clock paused", "ok");
@@ -433,7 +457,7 @@ async function releaseHoldAction(id: string) {
   if (!l) return;
   const holdId = l.hold?.id;
   if (!holdId) {
-    // Local-only hold — clear
+    // Local-only hold � clear
     l.hold = null;
     l.lastCommit = eng.NOW();
     toast("Hold released", "ok");
@@ -445,7 +469,7 @@ async function releaseHoldAction(id: string) {
     await releaseHold(id, holdId, "Hold released from CRM", cycle);
     l.hold = null;
     l.lastCommit = eng.NOW();
-    eng.addEv(l, "owner", "Manager hold released. Inactivity clock restarted.");
+    addEvLocal(l, "owner", "Manager hold released. Inactivity clock restarted.");
     toast("Hold released", "ok");
     await refreshLead(id);
     render();
@@ -470,7 +494,10 @@ async function saveNudge(id: string) {
   try {
     const cycle = await ensureCycle(l);
     await sendNudge(id, cycle, text.trim());
-    eng.addEv(l, "note", "Manager nudge: " + text.trim());
+    addEvLocal(l, "note", "Manager nudge: " + text.trim());
+    // Agent notification + nudge record (shown on the lead and in the agent's notifications)
+    (eng.S as any).nudges.push({ lead: l.id, by: eng.me().id, at: eng.NOW(), t: text.trim() });
+    if (l.owner) eng.notify(l.owner, { t: "Nudge from " + eng.me().name, d: text.trim(), go: "agent-lead-" + l.id, ic: "bell" });
     f._busy = false;
     closeM();
     toast("Nudge sent", "ok");
@@ -515,7 +542,7 @@ async function dialLead(id: string) {
       phone,
     };
     if (attempt?.ownership_cycle) l.ownershipCycle = attempt.ownership_cycle;
-    eng.addEv(l, "call", "Call started from the app (dialer opened)");
+    addEvLocal(l, "call", "Call started from the app (dialer opened)");
     if (phone) location.href = "tel:" + phone.replace(/\s/g, "");
     toast("Opening the phone dialer for " + phone);
     render();
@@ -541,6 +568,7 @@ async function saveRules() {
   };
   const x = intIn("inactX", 1, 60);
   const y = intIn("inactY", 1, 30);
+  const na = intIn("noActDays", 1, 60);
   const c = intIn("capDefault", 1, 500);
   const sp = intIn("speed", 1, 240);
   const h = intIn("holdHours", 1, 168);
@@ -574,6 +602,7 @@ async function saveRules() {
     };
     applyLocal("inactX", daysX, "At-risk days");
     applyLocal("inactY", daysY, "Return days");
+    applyLocal("noActDays", na, "No-action days");
     applyLocal("capDefault", c, "Default ceiling");
     applyLocal("speed", sp, "Speed to lead");
     applyLocal("holdHours", h, "Hold hours");
@@ -619,8 +648,8 @@ export async function hydrateLeadWorkspace(leadId: string) {
     const tl = await getTimeline(leadId, { limit: 50, offset: 0 });
     if (tl.items.length) {
       const mapped = mapTimelineToEv(tl.items);
-      const local = (l.ev || []).filter((x: any) => !x._api);
-      l.ev = [...mapped, ...local].sort((a: any, b: any) => (b.at || 0) - (a.at || 0));
+      const local = (l.ev || []).filter((x: any) => !x._api && !x._pending);
+      l.ev = [...mapped, ...local].sort((a: any, b: any) => (b.t || 0) - (a.t || 0));
     }
   } catch {
     /* optional */

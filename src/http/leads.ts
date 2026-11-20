@@ -10,8 +10,8 @@ import type {
   LeadListItem,
   LeadListMeta,
   LeadListParams,
-  QualifyLeadPayload,
-  UpdateLeadPayload,
+  UpdateLeadProfilePayload,
+  UpdateLeadQualificationPayload,
 } from "./leads.types";
 
 export type LeadListResult = {
@@ -57,22 +57,24 @@ export async function createLead(payload: CreateLeadPayload) {
   return data;
 }
 
-export async function updateLead(id: string | number, payload: UpdateLeadPayload) {
-  const { data } = await api.patch<ApiResponse<Partial<LeadDetail>>>(
-    apiEndpoints.leads.byId(id),
+export async function updateLeadProfile(id: string | number, payload: UpdateLeadProfilePayload) {
+  const { data } = await api.put<ApiResponse<Partial<LeadDetail>>>(
+    apiEndpoints.leads.profile(id),
     payload,
   );
   return data;
 }
 
-export async function qualifyLead(id: string | number, payload: QualifyLeadPayload) {
-  const { data } = await api.post<ApiResponse<Partial<LeadDetail>>>(
-    apiEndpoints.leads.qualify(id),
+export async function updateLeadQualification(
+  id: string | number,
+  payload: UpdateLeadQualificationPayload,
+) {
+  const { data } = await api.put<ApiResponse<Partial<LeadDetail>>>(
+    apiEndpoints.leads.qualification(id),
     payload,
   );
   return data;
 }
-
 export async function archiveLead(id: string | number, reason: string) {
   const { data } = await api.post<ApiResponse<Partial<LeadDetail>>>(
     apiEndpoints.leads.archive(id),

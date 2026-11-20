@@ -4,10 +4,11 @@
  */
 import React from 'react';
 import { eng, ini } from '../../engine';
-import { AvBox, Empty, Icon, LeadLinks, OwnerChip, StageChip, TempChip, isShort, paged } from '../../ui';
+import { AvBox, Chip, Empty, Icon, LeadLinks, OwnerChip, StageChip, TempChip, isShort, paged } from '../../ui';
 import { LeadFlag, LeadTags, NextTxt, hasLeadFlag, hasLeadTags, leadFlagText } from './leadBits';
+import { noActionDays } from './noAction';
 
-export function LeadTable({ list, role, pageKey, per = 10, owner }: { list: any[]; role: string; pageKey: string; per?: number; owner?: boolean }) {
+export function LeadTable({ list, role, pageKey, per = 10, owner, noWork, reassign }: { list: any[]; role: string; pageKey: string; per?: number; owner?: boolean; noWork?: boolean; reassign?: boolean }) {
   const P = paged(list, pageKey, per);
   const base = role + '-lead-';
   if (!list.length) {
@@ -18,7 +19,7 @@ export function LeadTable({ list, role, pageKey, per = 10, owner }: { list: any[
       <div className="tw responsive">
         <table className="tbl">
           <thead>
-            <tr><th>Lead</th><th>Temp</th><th>Stage</th><th>Next action</th>{owner ? <th>Owner</th> : null}<th>Status</th><th className="chevc"></th></tr>
+            <tr><th>Lead</th><th>Temp</th><th>Stage</th><th>Next action</th>{owner ? <th>Owner</th> : null}<th>Status</th>{reassign ? <th></th> : null}<th className="chevc"></th></tr>
           </thead>
           <tbody>
             {P.items.map((l: any) => (
@@ -37,7 +38,8 @@ export function LeadTable({ list, role, pageKey, per = 10, owner }: { list: any[
                 <td className={isShort(l.stage) ? 'nw' : undefined}><StageChip s={l.stage} /></td>
                 <td className="nw"><NextTxt l={l} /></td>
                 {owner ? <td className={isShort(l.owner ? eng.uname(l.owner) : 'Admin pool') ? 'nw' : undefined}><OwnerChip id={l.owner} /></td> : null}
-                <td className={isShort(hasLeadFlag(l) ? leadFlagText(l) : 'On track') ? 'nw' : undefined}>{hasLeadFlag(l) ? <LeadFlag l={l} /> : <span className="faint">On track</span>}</td>
+                <td className={noWork || isShort(hasLeadFlag(l) ? leadFlagText(l) : 'On track') ? 'nw' : undefined}>{noWork ? <><Chip t={'No work · ' + noActionDays(l) + ' days'} cls="s7" />{hasLeadFlag(l) ? <> <LeadFlag l={l} /></> : null}</> : hasLeadFlag(l) ? <LeadFlag l={l} /> : <span className="faint">On track</span>}</td>
+                {reassign ? <td className="nw"><div className="row g6"><button className="btn s" type="button" data-open={`nudge|${l.id}`}><Icon n="bell" s={14} />Nudge</button><button className="btn pri s" type="button" data-open={`reassign|${l.id}`}>Reassign</button></div></td> : null}
                 <td className="chevc"><Icon n="chev" s={16} /></td>
               </tr>
             ))}

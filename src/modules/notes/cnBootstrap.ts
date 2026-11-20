@@ -10,6 +10,7 @@ import {
   go,
   bump,
   render,
+  confirmM,
 } from "../../engine";
 import { getSettings, patchCnCommission, patchCnTerms, patchFx } from "../../http/settings";
 import {
@@ -86,6 +87,51 @@ async function ensureApplication(leadId: string) {
   }
   upsertCnApplication(res.data);
   return res.data.id;
+}
+
+/**
+ * Load (and optionally create) the Convertible Note application for a CN-track lead so
+ * lead.cn is populated and the "Convertible Note" card appears on the lead overview.
+ * Per MODULE_4 doc: POST /applications/ starts at stage "Qualified"; one open app per lead.
+ */
+export async function syncLeadCnApplication(
+  leadId: string,
+  opts: { create?: boolean } = {},
+): Promise<any | null> {
+  const l = eng.leadById(leadId);
+  if (!l) return null;
+  try {
+    const listed = await listCnApplications({ lead_id: numId(leadId) });
+    const items = listed.data || [];
+    const hit = items.find((a) => a.stage !== "Active") || items[0];
+    if (hit) {
+      try {
+        const detail = await getCnApplication(hit.id);
+        if (detail.success && detail.data) upsertCnApplication(detail.data);
+        else upsertCnApplication(hit);
+      } catch {
+        upsertCnApplication(hit);
+      }
+      return eng.leadById(leadId)?.cn || null;
+    }
+  } catch {
+    /* no access / endpoint unavailable — fall through */
+  }
+  if (!opts.create) return null;
+  try {
+    const res = await createCnApplication({
+      lead_id: Number(leadId),
+      amount: l.cn?.amount || l.budget?.[1] || undefined,
+      currency: l.cn?.cur || l.cur || "AED",
+    });
+    if (res.success && res.data) {
+      upsertCnApplication(res.data);
+      return eng.leadById(leadId)?.cn || null;
+    }
+  } catch {
+    /* 409 (already exists) or permission — ignore, card stays hidden */
+  }
+  return null;
 }
 
 async function refreshApp(leadId: string) {
@@ -613,6 +659,21 @@ export function installConvertibleNotesApiOverrides(): void {
     void payfixed(a[0], a[1]);
   };
   A.paybounce = (a) => {
+    void paybounce(a[0], a[1]);
+  };
+  /** Ask before marking a paid payout as bounced (it raises the bounced-payout alert for the agent). */
+  A.paybounceask = (a) => {
+    confirmM({
+      title: `Mark payout ${a[1]} as bounced?`,
+      text: "Use this when the cheque did not clear. The note shows a bounced payout until Admin resolves it.",
+      act: `paybounceok|${a[0]}|${a[1]}`,
+      ok: "Mark bounced",
+      danger: true,
+    });
+  };
+  A.paybounceok = (a) => {
+    eng.UI.c = null;
+    renderOverlay();
     void paybounce(a[0], a[1]);
   };
   A.cnrepay = (a) => {

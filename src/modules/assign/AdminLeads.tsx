@@ -3,9 +3,10 @@ import React from 'react';
 import { eng } from '../../engine';
 import { Btn, PgHead, Search, Sel } from '../../ui';
 import { LeadTable } from '../leads/LeadTable';
+import { isNoAction, noActionThreshold } from '../leads/noAction';
 import type { ScreenComp } from '../../app/types';
 
-const VIEWS: [string, string][] = [['all', 'All active'], ['pool', 'In pool'], ['risk', 'At risk'], ['hot', 'Hot'], ['linked', 'Linked'], ['esc', 'Escalated'], ['arch', 'Archived']];
+const VIEWS: [string, string][] = [['all', 'All active'], ['pool', 'In pool'], ['noact', 'No action'], ['risk', 'At risk'], ['hot', 'Hot'], ['linked', 'Linked'], ['esc', 'Escalated'], ['arch', 'Archived']];
 
 export const AdminLeads: ScreenComp = () => {
   const S = eng.S, UI = eng.UI;
@@ -14,6 +15,7 @@ export const AdminLeads: ScreenComp = () => {
   const V: Record<string, (l: any) => boolean> = {
     all: (l) => !l.archived,
     pool: (l) => !l.owner && !l.archived,
+    noact: (l) => isNoAction(l),
     risk: (l) => l.owner && !l.archived && eng.leadRisk(l).state === 'risk',
     hot: (l) => !l.archived && l.temp === 'hot',
     linked: (l) => !!l.linked,
@@ -35,15 +37,16 @@ export const AdminLeads: ScreenComp = () => {
         <Btn cls="pri" open="add-lead" ic="plus">Add lead</Btn>
       </>} />
       <div className="pills mb16">
-        {VIEWS.map(([k, t]) => <button key={k} type="button" className={'pill ' + (v === k ? 'on' : '')} data-act={`ui|alv|${k}`}>{t} <span className="cnt">{cnt(k)}</span></button>)}
+        {VIEWS.map(([k, t]) => <button key={k} type="button" className={'pill ' + (v === k ? 'on' : '')} data-act={`ui|alv|${k}`}>{k === 'noact' ? t + ' ' + noActionThreshold() + '+ days' : t} <span className="cnt">{cnt(k)}</span></button>)}
       </div>
+      {v === 'noact' ? <p className="muted sm mb16">Leads whose agent has done nothing on them for {noActionThreshold()} days or more. Change the number of days in <a href="#admin-settings" data-go="admin-settings">Settings → Lead rules</a>.</p> : null}
       <div className="row g6 wrap mb16 fbar">
         <div style={{ flex: 1, minWidth: 220 }}><Search bind="alq" val={UI.f.alq} ph="Search name, phone, email or lead ID" /></div>
         <Sel bind="alo" cur={ow} opts={[['all', 'Any owner'], ['pool', 'Admin pool'], ...eng.agentsAll().map((a: any) => [a.id, a.name] as [string, string])]} />
         <Sel bind="alt" cur={tm} opts={[['all', 'All teams'], ...S.teams.map((t: any) => [t.id, t.name] as [string, string])]} />
         <Sel bind="alc" cur={cp} opts={[['all', 'All campaigns'], ...camps.map((c) => [c, c] as [string, string])]} />
       </div>
-      <section className="card flat"><LeadTable list={ls} role="admin" pageKey="alp" per={12} owner /></section>
+      <section className="card flat"><LeadTable list={ls} role="admin" pageKey="alp" per={12} owner noWork={v === 'noact'} reassign={v === 'noact' || v === 'risk'} /></section>
     </>
   );
 };

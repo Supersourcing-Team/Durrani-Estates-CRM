@@ -1,9 +1,23 @@
 /* AD-L3-24 Connect Meta / Google lead ads (prototype modal src-connect, steps in UI.mf.st). */
 import React from 'react';
-import { eng } from '../../engine';
-import { Dl, Fld, Icon, MSel, Modal } from '../../ui';
+import { eng, renderOverlay } from '../../engine';
+import { Bn, Fld, Icon, MSel, Modal } from '../../ui';
 import type { ModalComp } from '../../app/types';
 import { RouteFields } from './parts';
+import { CRM_FIELDS, FORM_QUESTIONS, checkMapping } from './sourceMapping';
+
+/** CRM-field picker for form question #i (stored in UI.mf.mp<i>); re-renders so the check updates live. */
+const MapSel = ({ i, bad }: { i: number; bad: boolean }) => (
+  <select className={'sel ' + (bad ? 'bad' : '')} id={'m_mp' + i} value={String(eng.UI.mf['mp' + i] || '')}
+    onChange={(ev) => {
+      eng.UI.mf['mp' + i] = ev.target.value;
+      if (eng.UI.mf._e) { delete eng.UI.mf._e['mp' + i]; }
+      renderOverlay();
+    }}>
+    <option value="">Choose a CRM field</option>
+    {CRM_FIELDS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+  </select>
+);
 
 /** prototype: <input type="checkbox" data-act="srcform|name">; the srcform action toggles UI.mf.forms. */
 const FormCheck = ({ name, on }: { name: string; on: boolean }) => (
@@ -34,14 +48,38 @@ export const SrcConnectModal: ModalComp = ({ args }) => {
       <div className="col g6">{forms.map((x) => <label key={x} className="row g6 sm"><FormCheck name={x} on={pick.includes(x)} /> {x}</label>)}</div>
     </Fld>
   </>;
-  else if (st === 3) body = <>
-    <p className="muted sm">We matched the form questions to CRM fields. Change any that are wrong.</p>
-    <Dl items={[['Full name', 'Name'], ['Phone number', 'Phone'], ['Email', 'Email'], ['City', 'City'], ['Custom: budget', 'Budget']]} />
-  </>;
+  else if (st === 3) {
+    const qs = FORM_QUESTIONS[k] || [];
+    const chk = checkMapping(k, f);
+    const shown = !!e.map; // errors are shown inline after a failed Next / Connect
+    body = <>
+      <div className="row sb">
+        <p className="muted sm">We matched each form question to a CRM field. Change any that are wrong.</p>
+        <button className="btn s" type="button" data-act={'srcmapreset|' + k}>Re-match</button>
+      </div>
+      {shown ? <Bn kind="err" title="Mapping needs a fix" body={e.map} /> : null}
+      {qs.map((x, i) => (
+        <Fld key={x.q} label={x.q} htmlFor={'m_mp' + i} hint={'Sample answer: ' + x.sample} err={e['mp' + i]}>
+          <MapSel i={i} bad={!!e['mp' + i]} />
+        </Fld>
+      ))}
+      <div className="card soft">
+        <div className="h3 mb8">Mapping check</div>
+        <div className="col g6">
+          {chk.list.map((c) => (
+            <div key={c.text} className={'row g6 sm ' + (c.ok ? 'oktx' : 'dangertx')}>
+              <Icon n={c.ok ? 'check' : 'alert'} s={14} />{c.text}
+            </div>
+          ))}
+        </div>
+        <div className="muted sm mt8">{chk.mapped} mapped · {chk.skipped} not imported</div>
+      </div>
+    </>;
+  }
   else body = <RouteFields projLabel="Project (optional)" projHint="Sets the project interest on each new lead." />;
 
   return (
-    <Modal title={'Connect ' + t} size="w" foot={<>
+    <Modal title={'Connect ' + t} drawer foot={<>
       <button className="btn" type="button" data-act={st > 1 ? 'mset|st|' + (st - 1) : 'mclose'}>{st > 1 ? 'Back' : 'Cancel'}</button>
       {st === 1 ? null : st < 4
         ? <button className="btn pri" type="button" data-act={'srcnext|' + k}>Next</button>

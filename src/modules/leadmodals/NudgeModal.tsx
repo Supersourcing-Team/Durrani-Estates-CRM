@@ -10,7 +10,7 @@ export const NudgeModal: ModalComp = ({ args: a }) => {
   const l = eng.leadById(a[0]);
   const busy = !!eng.UI.mf._busy;
   return (
-    <Modal title="Nudge agent" sub={`${l.name} · ${eng.uname(l.owner)}`}
+    <Modal title="Nudge agent" sub={`${l.name} · ${eng.uname(l.owner)}`} drawer
       foot={<><button className="btn" type="button" data-act="mclose" disabled={busy || undefined}>Cancel</button><BusyBtn busy={busy} act={`nudgesave|${l.id}`} label={<><Icon n="send" s={16} />Send nudge</>} busyLabel="Sending…" /></>}>
       <Fld label="Message"><div className="col g6">{MSGS.map((m) => <MOpt key={m} k="msg" v={m} t={m} />)}</div></Fld>
       <Fld label="Add your own words (optional)" htmlFor="m_txt"><MTxa k="txt" /></Fld>

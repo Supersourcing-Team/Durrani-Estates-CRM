@@ -12,13 +12,15 @@ export interface ModalProps {
   foot?: Node;
   size?: '' | 'w' | 'xw' | string;
   drawer?: boolean;
+  /** Always a right-hand drawer, even on narrow screens (no bottom sheet). */
+  side?: boolean;
   label?: string;
   children?: Node;
 }
 
-export function Modal({ title, sub, foot, size, drawer, label, children }: ModalProps) {
+export function Modal({ title, sub, foot, size, drawer, side, label, children }: ModalProps) {
   const { narrow, phone } = useStage();
-  const mode = drawer && !narrow ? 'drawer' : narrow ? 'sheet' : '';
+  const mode = side ? 'drawer' : drawer && !narrow ? 'drawer' : narrow ? 'sheet' : '';
   const aria = label || (typeof title === 'string' ? title : undefined);
   return (
     <div className={'scrim ' + mode} data-act="mbg" role="dialog" aria-modal="true" aria-label={aria}>

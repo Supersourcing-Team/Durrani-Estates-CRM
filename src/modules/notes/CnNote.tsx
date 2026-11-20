@@ -8,6 +8,14 @@ const PAY_CLS: Record<string, string> = { paid: 's6', due: 's5', upcoming: 's2',
 const PDC_CLS: Record<string, string> = { cleared: 's6', held: 's2', bounced: 's7' };
 const FILTERS: [string, string][] = [['all', 'All'], ['paid', 'Paid'], ['due', 'Due'], ['upcoming', 'Upcoming'], ['bounced', 'Bounced'], ['overdue', 'Overdue']];
 
+/** Admin action for a payout row: bounce a paid one, pay a due one, resolve a bounced one. */
+function payAction(n: any, x: any) {
+  if (x.status === 'paid') return <button className="btn s dngo" type="button" data-act={`paybounceask|${n.id}|${x.n}`}>Mark bounced</button>;
+  if (x.status === 'due' || x.status === 'overdue') return <button className="btn s pri" type="button" data-open={`payout-pay|${n.id}|${x.n}`}>Mark paid</button>;
+  if (x.status === 'bounced') return <button className="btn s pri" type="button" data-open={`payout-fix|${n.id}|${x.n}`}>Resolve</button>;
+  return null;
+}
+
 export function CnNote({ params, role = 'agent' }: { params: string[]; role?: Role }) {
   const n = eng.noteById(eng.noteF(params[0]));
   if (role === 'mgmt' && n && eng.teamOf(n.agent) !== eng.me().team) return <Card title=""><Empty icn="lock" t="Not your team" d="This note belongs to another team." act={<Btn t="Back" go="mgmt-cn" cls="pri" />} /></Card>;
@@ -54,10 +62,10 @@ export function CnNote({ params, role = 'agent' }: { params: string[]; role?: Ro
               {FILTERS.map(([k, t]) => <button key={k} type="button" className={'pill ' + (f === k ? 'on' : '')} data-act={`ui|nf2|${k}`}>{t}</button>)}
             </div>
             <div className="tw"><table className="tbl">
-              <thead><tr><th>#</th><th>Due</th><th className="num">Amount</th><th>Status</th><th>Reference</th></tr></thead>
+              <thead><tr><th>#</th><th>Due</th><th className="num">Amount</th><th>Status</th><th>Reference</th>{role === 'admin' ? <th></th> : null}</tr></thead>
               <tbody>
                 {P.items.map((x) => (
-                  <tr key={x.n}><td>{x.n}</td><td>{fd(x.due)}</td><td className="num">{nf(x.amt)}</td><td><Chip t={cap1(x.status)} cls={PAY_CLS[x.status]} /></td><td className="sm">{x.ref || ''}</td></tr>
+                  <tr key={x.n}><td>{x.n}</td><td>{fd(x.due)}</td><td className="num">{nf(x.amt)}</td><td><Chip t={cap1(x.status)} cls={PAY_CLS[x.status]} /></td><td className="sm">{x.ref || ''}</td>{role === 'admin' ? <td className="tr">{payAction(n, x)}</td> : null}</tr>
                 ))}
               </tbody>
             </table></div>

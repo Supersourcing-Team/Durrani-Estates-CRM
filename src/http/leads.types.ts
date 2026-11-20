@@ -150,24 +150,28 @@ export interface CreateLeadPayload {
   purchase_purpose?: string;
 }
 
-export interface UpdateLeadPayload {
-  requirement_summary?: string;
+/** PUT /v1/leads/{id}/profile/ : customer details (and the lead temperature). */
+export interface UpdateLeadProfilePayload {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  email?: string | null;
+  city?: string;
+  country?: string;
+  nationality?: string;
+  temperature?: LeadTemperature | string;
+}
+
+/** PUT /v1/leads/{id}/qualification/ */
+export interface UpdateLeadQualificationPayload {
+  track: LeadTrack | string;
+  budget_min?: number | null;
+  budget_max?: number | null;
+  budget_currency?: string;
   property_type?: string;
   timeline?: string;
   payment_method?: string;
   purchase_purpose?: string;
   visa_required?: boolean;
-  arabic_speaking?: boolean;
-  temperature?: LeadTemperature | string;
-  budget_min?: number | null;
-  budget_max?: number | null;
-  budget_currency?: string;
-}
-
-export interface QualifyLeadPayload {
-  track?: LeadTrack | string;
-  property_sales?: boolean;
-  convertible_notes?: boolean;
-  secondary_market?: boolean;
   notes?: string;
 }
